@@ -1,0 +1,56 @@
+'use client';
+import { motion } from 'framer-motion';
+import Image from 'next/image';
+import { useSiteContent } from '@/lib/siteContent';
+import { soul } from '@/lib/brandImages';
+
+export default function About() {
+  const [content] = useSiteContent();
+  const { about } = content;
+  return (
+    <section id="about" className="py-32 px-6 md:px-[8%]">
+      <div className="grid md:grid-cols-2 gap-12 md:gap-24 items-center max-w-7xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, x: -80 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
+        >
+          <p className="text-[11px] tracking-[0.5em] uppercase text-maroon mb-6">{about.label}</p>
+          <h2 className="font-serif text-4xl md:text-5xl font-light leading-tight text-ink mb-8">
+            {about.title}
+          </h2>
+          <p className="text-sm md:text-[15px] leading-loose text-muted font-light mb-6">{about.p1}</p>
+          <p className="text-sm md:text-[15px] leading-loose text-muted font-light">{about.p2}</p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, x: 80 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
+          className="relative h-[420px] md:h-[520px] group overflow-hidden"
+        >
+          <Image
+            src={soul[0].src}
+            alt={soul[0].alt}
+            fill
+            quality={85}
+            priority
+            sizes="(max-width: 768px) 100vw, 50vw"
+            placeholder="blur"
+            blurDataURL={soul[0].blurDataURL}
+            className="object-cover img-enhance transition-transform duration-700 group-hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+          <div className="absolute -top-5 -left-5 w-24 h-24 border-t border-l border-gold group-hover:-top-2 group-hover:-left-2 transition-all duration-500 z-10" />
+          <div className="absolute -bottom-5 -right-5 w-24 h-24 border-b border-r border-gold group-hover:-bottom-2 group-hover:-right-2 transition-all duration-500 z-10" />
+          <div className="absolute bottom-8 left-8 text-cream z-10">
+            <p className="text-[10px] tracking-[0.3em] uppercase opacity-80">Since 2018</p>
+            <p className="font-serif text-2xl mt-2">Hospitality, reimagined.</p>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}

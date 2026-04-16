@@ -1,0 +1,13 @@
+node_modules
+.next
+.claude
+out
+.env*
+!.env.example
+.DS_Store
+*.log
+
+# Unoptimized DSLR source folders — re-generate public/images/venues via `npm run optimize:images`
+/public/Sky
+/public/Soul
+/public/Unwind
