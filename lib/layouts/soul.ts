@@ -126,7 +126,7 @@ export const SOUL_PROPS: LayoutProp[] = [
   { kind: 'wall', id: 'plant-1', position: [-7.5, 0.5, -7.5], size: [0.5, 1.0, 0.5], color: '#2d6a1e' },
   { kind: 'wall', id: 'plant-2', position: [-3.5, 0.5, -7.5], size: [0.5, 1.0, 0.5], color: '#3a8a28' },
   { kind: 'wall', id: 'plant-3', position: [-7.5, 0.5, 0.0], size: [0.5, 1.0, 0.5], color: '#2d6a1e' },
-  { kind: 'wall', id: 'plant-4', position: [-2.5, 0.5, 5.0], size: [0.5, 1.0, 0.5], color: '#4a9a38' },
+  // { kind: 'wall', id: 'plant-4', position: [-2.5, 0.5, 5.0], size: [0.5, 1.0, 0.5], color: '#4a9a38' },
   { kind: 'wall', id: 'plant-5', position: [0.5, 0.5, 7.0], size: [0.5, 1.0, 0.5], color: '#3a8a28' },
 
   // ======== WOODEN SLAT PARTITION (entry area, vertical bars — from DSC08074) ========
