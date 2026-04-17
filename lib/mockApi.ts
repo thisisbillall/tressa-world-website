@@ -1,6 +1,8 @@
 // Dummy API layer — swap `fetchVenue`/`submitBooking` with your real HTTP calls later.
 // Response shapes are kept the same as the expected backend contract.
 
+import { SKY_LAYOUT } from '@/lib/layouts/sky';
+
 export type VenueId = 'restaurant' | 'rooftop' | 'bar' | 'suites';
 
 export type SlotId = 'lunch' | 'tea' | 'dinner' | 'night';
@@ -27,6 +29,8 @@ export type Table = {
   position: [number, number, number];  // x,y,z in scene units
   rotation?: number;        // radians, Y-axis
   availability: Record<SlotId, boolean>;
+  tableColor?: string;      // table surface color (default: wood/marble)
+  chairColor?: string;      // chair upholstery color (default: cream)
 };
 
 export type Suite = {
@@ -41,12 +45,22 @@ export type Suite = {
   availableDates: string[];   // ISO dates available in next 30 days
 };
 
+export type VenueProp =
+  | { kind: 'wall';      id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; color?: string; label?: string }
+  | { kind: 'counter';   id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; label?: string }
+  | { kind: 'projector'; id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; label?: string }
+  | { kind: 'door';      id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; label?: string }
+  | { kind: 'rock';      id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; color?: string; label?: string }
+  | { kind: 'glass';     id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; label?: string }
+  | { kind: 'kitchen';   id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; label?: string };
+
 export type VenueData = {
   id: VenueId;
   name: string;
   description: string;
   tables?: Table[];
   suites?: Suite[];
+  props?: VenueProp[];
   groundColor: string;
   ambient: string;
 };
@@ -118,11 +132,12 @@ const DB: Record<VenueId, VenueData> = {
   },
   rooftop: {
     id: 'rooftop',
-    name: 'Rooftop Lounge',
-    description: 'Open-air rooftop under the stars.',
-    groundColor: '#eaf0ea',
-    ambient: '#e6f0ec',
-    tables: buildTables('F', 10, 42)
+    name: 'The Sky · Rooftop',
+    description: 'Open-air rooftop lounge — laid out from the hand-drawn TRESSA Sky floor plan.',
+    groundColor: SKY_LAYOUT.groundColor,
+    ambient: SKY_LAYOUT.ambient,
+    tables: SKY_LAYOUT.tables,
+    props: SKY_LAYOUT.props
   },
   bar: {
     id: 'bar',
