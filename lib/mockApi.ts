@@ -3,6 +3,7 @@
 
 import { SKY_LAYOUT } from '@/lib/layouts/sky';
 import { UNWIND_LAYOUT } from '@/lib/layouts/unwind';
+import { SOUL_LAYOUT } from '@/lib/layouts/soul';
 
 export type VenueId = 'restaurant' | 'rooftop' | 'bar' | 'suites';
 
@@ -55,7 +56,8 @@ export type VenueProp =
   | { kind: 'rock'; id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; color?: string; label?: string }
   | { kind: 'glass'; id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; label?: string }
   | { kind: 'kitchen'; id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; label?: string }
-  | { kind: 'pillar'; id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; color?: string; label?: string };
+  | { kind: 'pillar'; id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; color?: string; label?: string }
+  | { kind: 'sofa'; id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; color?: string; label?: string };
 
 export type VenueData = {
   id: VenueId;
@@ -127,11 +129,12 @@ const SUITES: Suite[] = [
 const DB: Record<VenueId, VenueData> = {
   restaurant: {
     id: 'restaurant',
-    name: 'Family Restaurant',
-    description: 'Indoor fine-dining hall with warm ambient light.',
-    groundColor: '#f5ead0',
-    ambient: '#FCF1D6',
-    tables: buildTables('R', 12, 7)
+    name: 'Soul · Family Restaurant',
+    description: 'Fine-dining family restaurant with dark marble tables, art walls, and warm walnut wood accents.',
+    groundColor: SOUL_LAYOUT.groundColor,
+    ambient: SOUL_LAYOUT.ambient,
+    tables: SOUL_LAYOUT.tables,
+    props: SOUL_LAYOUT.props
   },
   rooftop: {
     id: 'rooftop',

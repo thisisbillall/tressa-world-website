@@ -112,7 +112,8 @@ const PROP_MATERIAL: Record<VenueProp['kind'], { color: string; roughness: numbe
   rock:      { color: '#c9a07c', roughness: 0.95, metalness: 0.0  },
   glass:     { color: '#b8d4e8', roughness: 0.05, metalness: 0.3  },
   kitchen:   { color: '#1a1a1a', roughness: 0.4,  metalness: 0.2  },
-  pillar:    { color: '#b8a890', roughness: 0.6,  metalness: 0.05 }
+  pillar:    { color: '#b8a890', roughness: 0.6,  metalness: 0.05 },
+  sofa:      { color: '#888888', roughness: 0.92, metalness: 0.0  }
 };
 
 function RockWall({ size, color }: { size: [number, number, number]; color: string }) {
@@ -410,6 +411,19 @@ function LayoutProp({ prop }: { prop: VenueProp }) {
   const mat = PROP_MATERIAL[prop.kind];
   const color = (prop as { color?: string }).color ?? mat.color;
   const label = prop.label;
+
+  if (prop.kind === 'sofa') {
+    const [sw, sh, sd] = prop.size;
+    const r = Math.min(sw, sh, sd) * 0.45;
+    const geo = useMemo(() => new RoundedBoxGeometry(sw, sh, sd, 4, r), [sw, sh, sd, r]);
+    return (
+      <group position={prop.position} rotation={[0, prop.rotation ?? 0, 0]}>
+        <mesh geometry={geo} castShadow receiveShadow>
+          <meshStandardMaterial color={color} roughness={0.92} metalness={0} />
+        </mesh>
+      </group>
+    );
+  }
 
   if (prop.kind === 'pillar') {
     const [pw, ph, pd] = prop.size;
