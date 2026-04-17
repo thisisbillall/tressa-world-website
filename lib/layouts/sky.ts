@@ -44,8 +44,8 @@ const TABLES: RawTable[] = [
   { id: 'SKY-03', label: 'S3', seats: 4, shape: 'square', position: [7, 0, -4.0] },
 
   // -------- Row 3 — upper-left pair (HORIZONTAL rects) + second round + right square --------
-  { id: 'SKY-04', label: 'S4', seats: 6, shape: 'rect', position: [-6.5, 0, 1.0], rotation: 0 }, // 6P horizontal
-  { id: 'SKY-05', label: 'S5', seats: 4, shape: 'rect', position: [-3.5, 0, 1.0], rotation: 0 }, // 4P horizontal
+  { id: 'SKY-04', label: 'S4', seats: 6, shape: 'rect', position: [-6.5, 0, 1.0], rotation: Math.PI / 2 }, // 6P horizontal
+  { id: 'SKY-05', label: 'S5', seats: 4, shape: 'square', position: [-3.5, 0, 1.0], rotation: 0 }, // 4P horizontal
 
 
   { id: 'SKY-06', label: 'S6', seats: 6, shape: 'round', position: [3.5, 0, -1.5] },
@@ -100,7 +100,7 @@ export const SKY_PROPS: LayoutProp[] = [
   { kind: 'projector', id: 'proj-top', position: [2.0, 1.5, -10.55], size: [5.0, 1.9, 0.12], label: 'Projector' },
 
   // ---- inner projector / wall divider ----
-  { kind: 'projector', id: 'proj-inner', position: [-4.5, 1.3, -2.5], size: [3.0, 1.6, 0.10], label: 'Projector' },
+  { kind: 'projector', id: 'proj-inner', position: [-5.5, 1.3, -2.5], size: [3.0, 1.6, 0.10], label: 'Projector' },
   { kind: 'rock', id: 'divider-bar',    position: [-5.5, 1.3, -2.7],  size: [7, WALL_H, 0.25],   color: '#c9a07c' },
 
   // ---- two rock pillars near the projector wall ----

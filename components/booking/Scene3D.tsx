@@ -106,7 +106,7 @@ function Ground({ color }: { color: string }) {
 const PROP_MATERIAL: Record<VenueProp['kind'], { color: string; roughness: number; metalness: number }> = {
   wall:      { color: '#f3e8cf', roughness: 0.85, metalness: 0.02 },
   counter:   { color: '#6b4a2b', roughness: 0.5,  metalness: 0.15 },
-  projector: { color: '#1a0d0a', roughness: 0.6,  metalness: 0.1  },
+  projector: { color: '#f5f5f5', roughness: 0.3,  metalness: 0.05 },
   door:      { color: '#E3AB32', roughness: 0.35, metalness: 0.4  },
   rock:      { color: '#c9a07c', roughness: 0.95, metalness: 0.0  },
   glass:     { color: '#b8d4e8', roughness: 0.05, metalness: 0.3  },
