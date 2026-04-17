@@ -43,8 +43,12 @@ const GEO = {
   // square / rect tables (rounded edges on top, wider)
   squareTop: new RoundedBoxGeometry(1.5, 0.07, 1.5, R, 0.02),
   squareCloth: new THREE.PlaneGeometry(1.5 + 0.25, 1.5 + 0.25),
-  rectTop: new RoundedBoxGeometry(2.2, 0.07, 1.3, R, 0.02),
-  rectCloth: new THREE.PlaneGeometry(2.2 + 0.25, 1.3 + 0.25),
+  rectTop: new RoundedBoxGeometry(2.6, 0.07, 1.4, R, 0.02),
+  rectCloth: new THREE.PlaneGeometry(2.6 + 0.25, 1.4 + 0.25),
+  rectTopLg: new RoundedBoxGeometry(3.2, 0.07, 1.5, R, 0.02),   // 7-8 seats
+  rectClothLg: new THREE.PlaneGeometry(3.2 + 0.25, 1.5 + 0.25),
+  rectTopXl: new RoundedBoxGeometry(4.5, 0.07, 1.6, R, 0.02),   // 9-12 seats
+  rectClothXl: new THREE.PlaneGeometry(4.5 + 0.25, 1.6 + 0.25),
   rectLeg: new RoundedBoxGeometry(0.06, 0.78, 0.06, R, 0.01),
   // place setting
   plate: (() => {
@@ -503,13 +507,17 @@ export default function Table3D({ table, available, selected, onSelect }: Props)
 
   // Pre-compute per-table geometry picks (shape-specific table top + footprint)
   const { topGeo, clothGeo, baseLayout, chairRadius, ringGeo, seatLayout } = useMemo(() => {
-    const tw = table.shape === 'rect' ? 2.2 : table.shape === 'round' ? 1.8 : 1.5;
-    const tl = table.shape === 'rect' ? 1.3 : table.shape === 'round' ? 1.8 : 1.5;
+    const tw = table.shape === 'rect' ? (table.seats >= 9 ? 4.5 : table.seats >= 7 ? 3.2 : 2.6) : table.shape === 'round' ? 1.8 : 1.5;
+    const tl = table.shape === 'rect' ? (table.seats >= 9 ? 1.6 : table.seats >= 7 ? 1.5 : 1.4) : table.shape === 'round' ? 1.8 : 1.5;
     const cr = table.shape === 'round' ? 0.98 : Math.max(tw, tl) / 2 + 0.28;
     const seats = placeSeats(table.shape, table.seats, tw, tl);
     return {
-      topGeo: table.shape === 'round' ? GEO.roundTop : table.shape === 'rect' ? GEO.rectTop : GEO.squareTop,
-      clothGeo: table.shape === 'round' ? null : table.shape === 'rect' ? GEO.rectCloth : GEO.squareCloth,
+      topGeo: table.shape === 'round' ? GEO.roundTop
+        : table.shape === 'rect' ? (table.seats >= 9 ? GEO.rectTopXl : table.seats >= 7 ? GEO.rectTopLg : GEO.rectTop)
+        : GEO.squareTop,
+      clothGeo: table.shape === 'round' ? null
+        : table.shape === 'rect' ? (table.seats >= 9 ? GEO.rectClothXl : table.seats >= 7 ? GEO.rectClothLg : GEO.rectCloth)
+        : GEO.squareCloth,
       baseLayout: table.shape === 'round'
         ? 'pedestal'
         : 'legs',

@@ -3,6 +3,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Environment, ContactShadows, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three-stdlib';
 import { Html } from '@react-three/drei';
 import Table3D from './Table3D';
 import Suite3D from './Suite3D';
@@ -105,12 +106,13 @@ function Ground({ color }: { color: string }) {
 
 const PROP_MATERIAL: Record<VenueProp['kind'], { color: string; roughness: number; metalness: number }> = {
   wall:      { color: '#f3e8cf', roughness: 0.85, metalness: 0.02 },
-  counter:   { color: '#6b4a2b', roughness: 0.5,  metalness: 0.15 },
+  counter:   { color: '#F5E6D0', roughness: 0.4,  metalness: 0.1  },
   projector: { color: '#f5f5f5', roughness: 0.3,  metalness: 0.05 },
   door:      { color: '#E3AB32', roughness: 0.35, metalness: 0.4  },
   rock:      { color: '#c9a07c', roughness: 0.95, metalness: 0.0  },
   glass:     { color: '#b8d4e8', roughness: 0.05, metalness: 0.3  },
-  kitchen:   { color: '#1a1a1a', roughness: 0.4,  metalness: 0.2  }
+  kitchen:   { color: '#1a1a1a', roughness: 0.4,  metalness: 0.2  },
+  pillar:    { color: '#b8a890', roughness: 0.6,  metalness: 0.05 }
 };
 
 function RockWall({ size, color }: { size: [number, number, number]; color: string }) {
@@ -408,6 +410,24 @@ function LayoutProp({ prop }: { prop: VenueProp }) {
   const mat = PROP_MATERIAL[prop.kind];
   const color = (prop as { color?: string }).color ?? mat.color;
   const label = prop.label;
+
+  if (prop.kind === 'pillar') {
+    const [pw, ph, pd] = prop.size;
+    const cornerR = Math.min(pw, pd) * 0.35;
+    const geo = useMemo(() => new RoundedBoxGeometry(pw, ph, pd, 3, cornerR), [pw, ph, pd, cornerR]);
+    return (
+      <group position={prop.position} rotation={[0, prop.rotation ?? 0, 0]}>
+        <mesh geometry={geo} castShadow receiveShadow>
+          <meshStandardMaterial color={color} roughness={mat.roughness} metalness={mat.metalness} />
+        </mesh>
+        {label && (
+          <Html position={[0, ph / 2 + 0.25, 0]} center distanceFactor={14} zIndexRange={[15, 0]} style={{ pointerEvents: 'none' }}>
+            <span className="px-2 py-0.5 text-[9px] tracking-[0.3em] uppercase text-maroon bg-white/85 border border-maroon/20 rounded-sm select-none whitespace-nowrap">{label}</span>
+          </Html>
+        )}
+      </group>
+    );
+  }
 
   if (prop.kind === 'kitchen') {
     return (

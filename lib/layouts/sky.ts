@@ -18,7 +18,8 @@ export type LayoutProp =
   | { kind: 'door'; id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; label?: string }
   | { kind: 'rock'; id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; color?: string; label?: string }
   | { kind: 'glass'; id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; label?: string }
-  | { kind: 'kitchen'; id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; label?: string };
+  | { kind: 'kitchen'; id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; label?: string }
+  | { kind: 'pillar'; id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; color?: string; label?: string };
 
 /* ============================================================
  * TABLES — 14 total, arranged to match the hand-drawn floor plan

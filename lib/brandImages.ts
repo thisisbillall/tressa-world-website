@@ -1,7 +1,7 @@
 // Typed wrapper around the generated manifest at public/images/venues/manifest.json.
 // Regenerate with:  npm run optimize:images
 
-import raw from '@/public/images/venues/manifest.json';
+import raw from './brand-manifest.json';
 
 export type VenueSlug = 'sky' | 'soul' | 'unwind';
 
