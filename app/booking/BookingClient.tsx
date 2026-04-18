@@ -110,12 +110,12 @@ export default function BookingClient() {
   return (
     <main className="fixed inset-0 bg-[#fdf8ea] text-ink overflow-hidden touch-none">
       {/* top bar */}
-      <header className="fixed top-0 left-0 right-0 z-30 px-6 md:px-10 py-5 flex items-center justify-between bg-gradient-to-b from-white/90 to-white/20 backdrop-blur-sm border-b border-maroon/10">
-        <TressaLink href="/" mode="leave" className="flex items-center gap-2 text-[11px] tracking-[0.3em] uppercase text-maroon hover:text-gold transition-colors">
+      <header className="fixed top-0 left-0 right-0 z-30 px-4 md:px-10 py-3 md:py-5 flex items-center justify-between bg-gradient-to-b from-white/90 to-white/20 backdrop-blur-sm border-b border-maroon/10">
+        <TressaLink href="/" mode="leave" className="flex items-center gap-1.5 text-[10px] md:text-[11px] tracking-[0.25em] uppercase text-maroon hover:text-gold transition-colors shrink-0">
           <ArrowLeft size={14} /> Back
         </TressaLink>
-        <p className="font-serif tracking-[0.4em] text-maroon text-base md:text-lg">TRESSA · BOOK</p>
-        <div className="text-[10px] tracking-[0.3em] uppercase text-muted">
+        <p className="font-serif tracking-[0.3em] md:tracking-[0.4em] text-maroon text-sm md:text-lg truncate mx-3">TRESSA · BOOK</p>
+        <div className="text-[9px] md:text-[10px] tracking-[0.2em] md:tracking-[0.3em] uppercase text-muted truncate hidden sm:block">
           {venue?.name ?? '...'}
         </div>
       </header>
@@ -140,16 +140,16 @@ export default function BookingClient() {
       </div>
 
       {/* bottom control rail */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 p-5 md:p-8 bg-gradient-to-t from-[#fdf8ea] via-[#fdf8ea]/85 to-transparent pointer-events-none">
+      <div className="fixed bottom-0 left-0 right-0 z-20 p-3 md:p-8 bg-gradient-to-t from-[#fdf8ea] via-[#fdf8ea]/85 to-transparent pointer-events-none">
         <div className="max-w-6xl mx-auto pointer-events-auto">
-          <div className="flex gap-2 md:gap-3 mb-4 flex-wrap">
+          <div className="flex gap-1.5 md:gap-3 mb-2 md:mb-4 flex-wrap">
             {VENUES.map((v) => (
               <button
                 key={v.id}
                 onClick={() => !v.disabled && setVenueId(v.id)}
                 disabled={v.disabled}
                 title={v.disabled ? 'Aura (Suites) is under development' : undefined}
-                className={`px-4 md:px-5 py-2.5 text-[10px] md:text-[11px] tracking-[0.25em] uppercase border transition-all ${
+                className={`px-3 md:px-5 py-1.5 md:py-2.5 text-[9px] md:text-[11px] tracking-[0.2em] md:tracking-[0.25em] uppercase border transition-all ${
                   v.disabled
                     ? 'bg-white/40 border-maroon/10 text-muted/60 cursor-not-allowed italic'
                     : venueId === v.id
@@ -166,16 +166,16 @@ export default function BookingClient() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col md:flex-row md:items-end gap-4 bg-white/90 backdrop-blur-md border border-maroon/10 p-4 md:p-5 shadow-[0_10px_40px_rgba(94,20,30,0.08)]"
+              className="flex flex-row items-end gap-2 md:gap-4 bg-white/90 backdrop-blur-md border border-maroon/10 p-2.5 md:p-5 shadow-[0_10px_40px_rgba(94,20,30,0.08)]"
             >
-              <div className="flex-1">
-                <p className="text-[9px] tracking-[0.3em] uppercase text-maroon mb-2">Time Slot</p>
-                <div className="flex gap-2 flex-wrap">
+              <div className="flex-1 min-w-0">
+                <p className="text-[8px] md:text-[9px] tracking-[0.25em] md:tracking-[0.3em] uppercase text-maroon mb-1.5 md:mb-2">Time Slot</p>
+                <div className="flex gap-1 md:gap-2 flex-wrap">
                   {TIME_SLOTS.map((s) => (
                     <button
                       key={s.id}
                       onClick={() => setSlot(s.id)}
-                      className={`px-3 py-2 text-[10px] tracking-[0.15em] uppercase border transition-all ${slot === s.id
+                      className={`px-2 md:px-3 py-1 md:py-2 text-[8px] md:text-[10px] tracking-[0.1em] md:tracking-[0.15em] uppercase border transition-all ${slot === s.id
                           ? 'bg-maroon border-maroon text-cream'
                           : 'border-maroon/15 text-muted hover:border-gold hover:text-maroon'
                         }`}
@@ -186,21 +186,20 @@ export default function BookingClient() {
                 </div>
               </div>
 
-              <div>
-                <p className="text-[9px] tracking-[0.3em] uppercase text-maroon mb-2">Date</p>
+              <div className="shrink-0">
                 <input
                   type="date"
                   value={date}
                   min={new Date().toISOString().slice(0, 10)}
                   onChange={(e) => setDate(e.target.value)}
-                  className="bg-white border border-maroon/15 text-ink text-sm px-3 py-2 focus:outline-none focus:border-gold"
+                  className="bg-white border border-maroon/15 text-ink text-[11px] md:text-sm px-2 md:px-3 py-1 md:py-2 focus:outline-none focus:border-gold w-[115px] md:w-auto"
                 />
               </div>
 
-              <div className="text-right md:pl-4 md:border-l md:border-maroon/10">
-                <p className="text-[9px] tracking-[0.3em] uppercase text-maroon">Available</p>
-                <p className="font-serif text-2xl text-maroon mt-1">
-                  {availableCount}<span className="text-muted text-sm"> / {venue.tables.length}</span>
+              <div className="text-right shrink-0 pl-2 md:pl-4 border-l border-maroon/10">
+                <p className="text-[8px] md:text-[9px] tracking-[0.2em] md:tracking-[0.3em] uppercase text-maroon">Open</p>
+                <p className="font-serif text-lg md:text-2xl text-maroon">
+                  {availableCount}<span className="text-muted text-[10px] md:text-sm">/{venue.tables.length}</span>
                 </p>
               </div>
             </motion.div>
@@ -224,7 +223,7 @@ export default function BookingClient() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8, duration: 0.8 }}
-          className="absolute top-20 md:top-24 left-1/2 -translate-x-1/2 z-10 text-center pointer-events-none px-4"
+          className="absolute top-14 md:top-24 left-1/2 -translate-x-1/2 z-10 text-center pointer-events-none px-4"
         >
           <p className="text-[10px] tracking-[0.4em] md:tracking-[0.5em] uppercase text-maroon">
             Tap a {venue?.suites ? 'Suite' : 'Table'} to zoom
@@ -238,7 +237,7 @@ export default function BookingClient() {
       {/* reset view */}
       <button
         onClick={() => { deselect(); setResetKey((k) => k + 1); }}
-        className="absolute top-20 right-4 md:top-24 md:right-6 z-10 w-10 h-10 flex items-center justify-center bg-white/90 border border-maroon/15 text-maroon hover:border-gold hover:text-gold transition-colors shadow-sm"
+        className="absolute top-14 right-3 md:top-24 md:right-6 z-10 w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-white/90 border border-maroon/15 text-maroon hover:border-gold hover:text-gold transition-colors shadow-sm"
         aria-label="Reset view"
         title="Reset view"
       >

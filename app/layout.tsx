@@ -3,14 +3,16 @@ import { Poppins, Playfair_Display } from 'next/font/google';
 import './globals.css';
 import TransitionProvider from '@/components/TransitionProvider';
 import OfferBanner from '@/components/OfferBanner';
-import { SITE, keywords } from '@/lib/seo';
+import { SITE, keywords, VERIFICATION } from '@/lib/seo';
 import {
   organizationSchema,
   websiteSchema,
+  localBusinessSchema,
   restaurantSchema,
   hotelSchema,
   menuSchema,
   faqSchema,
+  servicesSchema,
   DEFAULT_FAQS
 } from '@/lib/jsonld';
 
@@ -28,10 +30,13 @@ const playfair = Playfair_Display({
   display: 'swap'
 });
 
+const title = `${SITE.name} — Rooftop Lounge, Family Restaurant, Bar & Luxury Suites in Pune`;
+const ogTitle = `${SITE.name} — Rooftop · Restaurant · Bar · Suites in Pune`;
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: {
-    default: `${SITE.name} — Rooftop Lounge, Family Restaurant, Bar & Luxury Suites`,
+    default: title,
     template: `%s | ${SITE.name}`
   },
   description: SITE.description,
@@ -41,7 +46,7 @@ export const metadata: Metadata = {
   creator: SITE.name,
   publisher: SITE.name,
   category: 'Hospitality',
-  classification: 'Restaurant, Hotel, Bar, Lounge',
+  classification: 'Restaurant, Hotel, Bar, Lounge, Rooftop',
   referrer: 'origin-when-cross-origin',
   formatDetection: { email: false, address: false, telephone: false },
   alternates: {
@@ -49,28 +54,28 @@ export const metadata: Metadata = {
     languages: {
       'en-IN': SITE.url,
       'en-US': SITE.url,
+      'en-GB': SITE.url,
       'x-default': SITE.url
     }
   },
   openGraph: {
     type: 'website',
     url: SITE.url,
-    title: `${SITE.name} — Rooftop · Restaurant · Bar · Suites`,
+    title: ogTitle,
     description: SITE.description,
     siteName: SITE.name,
     locale: SITE.defaultLocale,
     alternateLocale: SITE.alternateLocales,
-    images: [
-      { url: SITE.ogImage, width: 1200, height: 630, alt: `${SITE.name} — luxury hospitality destination`, type: 'image/jpeg' }
-    ]
+    countryName: SITE.business.countryName
+    // OG image auto-generated via app/opengraph-image.tsx
   },
   twitter: {
     card: 'summary_large_image',
     site: SITE.twitter,
     creator: SITE.twitter,
-    title: `${SITE.name} — Rooftop · Restaurant · Bar · Suites`,
-    description: 'Book tables, reserve luxury suites, explore our menu — instant online confirmation.',
-    images: [SITE.ogImage]
+    title: ogTitle,
+    description: SITE.shortDescription
+    // Twitter image auto-generated via app/twitter-image.tsx
   },
   robots: {
     index: true,
@@ -85,9 +90,7 @@ export const metadata: Metadata = {
     }
   },
   verification: {
-    google: 'REPLACE_WITH_GOOGLE_SITE_VERIFICATION',
-    yandex: undefined,
-    other: { 'facebook-domain-verification': [] }
+    google: VERIFICATION.google
   },
   icons: {
     icon: [
@@ -95,14 +98,22 @@ export const metadata: Metadata = {
       { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
       { url: '/icon-512.png', sizes: '512x512', type: 'image/png' }
     ],
-    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }]
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
+    shortcut: '/favicon.ico'
   },
   manifest: '/manifest.webmanifest',
   other: {
     'geo.region': `${SITE.business.country}-${SITE.business.region}`,
-    'geo.placename': SITE.business.city,
+    'geo.placename': `${SITE.business.city}, ${SITE.business.regionName}`,
     'geo.position': `${SITE.business.latitude};${SITE.business.longitude}`,
-    ICBM: `${SITE.business.latitude}, ${SITE.business.longitude}`
+    ICBM: `${SITE.business.latitude}, ${SITE.business.longitude}`,
+    'DC.title': title,
+    'DC.type': 'Service',
+    'DC.format': 'text/html',
+    'DC.language': 'en-IN',
+    rating: 'General',
+    distribution: 'Global',
+    'revisit-after': '7 days'
   }
 };
 
@@ -123,25 +134,36 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     '@graph': [
       organizationSchema(),
       websiteSchema(),
+      localBusinessSchema(),
       restaurantSchema(),
       hotelSchema(),
       menuSchema(),
-      faqSchema(DEFAULT_FAQS)
+      faqSchema(DEFAULT_FAQS),
+      ...servicesSchema()
     ]
   };
 
   return (
-    <html lang="en-IN" className={`${poppins.variable} ${playfair.variable}`}>
+    <html
+      lang="en-IN"
+      className={`${poppins.variable} ${playfair.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content={SITE.shortName} />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="format-detection" content="telephone=no" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(graph) }}
         />
       </head>
-      <body className="font-sans antialiased">
+      <body className="font-sans antialiased" suppressHydrationWarning>
         <OfferBanner />
         <TransitionProvider>{children}</TransitionProvider>
       </body>

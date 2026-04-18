@@ -1,6 +1,10 @@
 // Dummy API layer — swap `fetchVenue`/`submitBooking` with your real HTTP calls later.
 // Response shapes are kept the same as the expected backend contract.
 
+import { SKY_LAYOUT } from '@/lib/layouts/sky';
+import { UNWIND_LAYOUT } from '@/lib/layouts/unwind';
+import { SOUL_LAYOUT } from '@/lib/layouts/soul';
+
 export type VenueId = 'restaurant' | 'rooftop' | 'bar' | 'suites';
 
 export type SlotId = 'lunch' | 'tea' | 'dinner' | 'night';
@@ -13,10 +17,10 @@ export type Slot = {
 };
 
 export const TIME_SLOTS: Slot[] = [
-  { id: 'lunch',  label: '12:00 PM – 3:00 PM',  start: '12:00', end: '15:00' },
-  { id: 'tea',    label: '3:00 PM – 5:00 PM',   start: '15:00', end: '17:00' },
-  { id: 'dinner', label: '5:00 PM – 8:00 PM',   start: '17:00', end: '20:00' },
-  { id: 'night',  label: '8:00 PM – 12:00 AM',  start: '20:00', end: '00:00' }
+  { id: 'lunch', label: '12:00 PM – 3:00 PM', start: '12:00', end: '15:00' },
+  { id: 'tea', label: '3:00 PM – 5:00 PM', start: '15:00', end: '17:00' },
+  { id: 'dinner', label: '5:00 PM – 8:00 PM', start: '17:00', end: '20:00' },
+  { id: 'night', label: '8:00 PM – 12:00 AM', start: '20:00', end: '00:00' }
 ];
 
 export type Table = {
@@ -27,6 +31,9 @@ export type Table = {
   position: [number, number, number];  // x,y,z in scene units
   rotation?: number;        // radians, Y-axis
   availability: Record<SlotId, boolean>;
+  tableColor?: string;      // table surface color (default: wood/marble)
+  chairColor?: string;      // chair upholstery color (default: cream)
+  chairStyle?: 'sofa';      // 'sofa' = armchair; omit = dining chair
 };
 
 export type Suite = {
@@ -41,12 +48,24 @@ export type Suite = {
   availableDates: string[];   // ISO dates available in next 30 days
 };
 
+export type VenueProp =
+  | { kind: 'wall'; id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; color?: string; label?: string }
+  | { kind: 'counter'; id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; label?: string }
+  | { kind: 'projector'; id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; label?: string }
+  | { kind: 'door'; id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; label?: string }
+  | { kind: 'rock'; id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; color?: string; label?: string }
+  | { kind: 'glass'; id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; label?: string }
+  | { kind: 'kitchen'; id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; label?: string }
+  | { kind: 'pillar'; id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; color?: string; label?: string }
+  | { kind: 'sofa'; id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; color?: string; label?: string };
+
 export type VenueData = {
   id: VenueId;
   name: string;
   description: string;
   tables?: Table[];
   suites?: Suite[];
+  props?: VenueProp[];
   groundColor: string;
   ambient: string;
 };
@@ -77,10 +96,10 @@ const buildTables = (prefix: string, count: number, seed: number): Table[] => {
       position: [(col - (cols - 1) / 2) * 3.2, 0, (row - 1.2) * 3.2],
       rotation: r() > 0.7 ? Math.PI / 4 : 0,
       availability: {
-        lunch:  r() > 0.25,
-        tea:    r() > 0.2,
+        lunch: r() > 0.25,
+        tea: r() > 0.2,
         dinner: r() > 0.4,
-        night:  r() > 0.35
+        night: r() > 0.35
       }
     });
   }
@@ -99,38 +118,41 @@ const futureDates = (count: number, skip = 0): string[] => {
 };
 
 const SUITES: Suite[] = [
-  { id: 'ste-royal-01',    label: 'RS-01', name: 'The Royal Suite',    tag: 'Royal',   beds: 1, sqft: 1200, priceNight: 28000, position: [-8, 0,  0], availableDates: futureDates(20, 2) },
-  { id: 'ste-royal-02',    label: 'RS-02', name: 'The Royal Suite',    tag: 'Royal',   beds: 1, sqft: 1200, priceNight: 28000, position: [ 8, 0,  0], availableDates: futureDates(18, 0) },
-  { id: 'ste-garden-01',   label: 'GS-01', name: 'Garden Suite',       tag: 'Premium', beds: 1, sqft:  850, priceNight: 18500, position: [-8, 0,  7], availableDates: futureDates(25, 1) },
-  { id: 'ste-garden-02',   label: 'GS-02', name: 'Garden Suite',       tag: 'Premium', beds: 2, sqft:  900, priceNight: 19500, position: [ 8, 0,  7], availableDates: futureDates(22, 0) },
-  { id: 'ste-heritage-01', label: 'HS-01', name: 'Heritage Suite',     tag: 'Classic', beds: 1, sqft:  700, priceNight: 14200, position: [-8, 0, -7], availableDates: futureDates(28, 0) },
-  { id: 'ste-heritage-02', label: 'HS-02', name: 'Heritage Suite',     tag: 'Classic', beds: 2, sqft:  720, priceNight: 14800, position: [ 8, 0, -7], availableDates: futureDates(26, 3) }
+  { id: 'ste-royal-01', label: 'RS-01', name: 'The Royal Suite', tag: 'Royal', beds: 1, sqft: 1200, priceNight: 28000, position: [-8, 0, 0], availableDates: futureDates(20, 2) },
+  { id: 'ste-royal-02', label: 'RS-02', name: 'The Royal Suite', tag: 'Royal', beds: 1, sqft: 1200, priceNight: 28000, position: [8, 0, 0], availableDates: futureDates(18, 0) },
+  { id: 'ste-garden-01', label: 'GS-01', name: 'Garden Suite', tag: 'Premium', beds: 1, sqft: 850, priceNight: 18500, position: [-8, 0, 7], availableDates: futureDates(25, 1) },
+  { id: 'ste-garden-02', label: 'GS-02', name: 'Garden Suite', tag: 'Premium', beds: 2, sqft: 900, priceNight: 19500, position: [8, 0, 7], availableDates: futureDates(22, 0) },
+  { id: 'ste-heritage-01', label: 'HS-01', name: 'Heritage Suite', tag: 'Classic', beds: 1, sqft: 700, priceNight: 14200, position: [-8, 0, -7], availableDates: futureDates(28, 0) },
+  { id: 'ste-heritage-02', label: 'HS-02', name: 'Heritage Suite', tag: 'Classic', beds: 2, sqft: 720, priceNight: 14800, position: [8, 0, -7], availableDates: futureDates(26, 3) }
 ];
 
 const DB: Record<VenueId, VenueData> = {
   restaurant: {
     id: 'restaurant',
-    name: 'Family Restaurant',
-    description: 'Indoor fine-dining hall with warm ambient light.',
-    groundColor: '#f5ead0',
-    ambient: '#FCF1D6',
-    tables: buildTables('R', 12, 7)
+    name: 'Soul · Family Restaurant',
+    description: 'Fine-dining family restaurant with dark marble tables, art walls, and warm walnut wood accents.',
+    groundColor: SOUL_LAYOUT.groundColor,
+    ambient: SOUL_LAYOUT.ambient,
+    tables: SOUL_LAYOUT.tables,
+    props: SOUL_LAYOUT.props
   },
   rooftop: {
     id: 'rooftop',
-    name: 'Rooftop Lounge',
-    description: 'Open-air rooftop under the stars.',
-    groundColor: '#eaf0ea',
-    ambient: '#e6f0ec',
-    tables: buildTables('F', 10, 42)
+    name: 'The Sky · Rooftop',
+    description: 'Open-air rooftop lounge — laid out from the hand-drawn TRESSA Sky floor plan.',
+    groundColor: SKY_LAYOUT.groundColor,
+    ambient: SKY_LAYOUT.ambient,
+    tables: SKY_LAYOUT.tables,
+    props: SKY_LAYOUT.props
   },
   bar: {
     id: 'bar',
-    name: 'Signature Bar',
-    description: 'Low-lit bar with high-tops and cocktail service.',
-    groundColor: '#efe5d0',
-    ambient: '#f5ead0',
-    tables: buildTables('B', 8, 17)
+    name: 'Unwind · Bar',
+    description: 'Low-lit bar with U-shaped counter, dark marble tables, and cognac leather seating.',
+    groundColor: UNWIND_LAYOUT.groundColor,
+    ambient: UNWIND_LAYOUT.ambient,
+    tables: UNWIND_LAYOUT.tables,
+    props: UNWIND_LAYOUT.props
   },
   suites: {
     id: 'suites',
@@ -158,28 +180,28 @@ export async function fetchTimeSlots(): Promise<Slot[]> {
 
 export type BookingPayload =
   | {
-      kind: 'table';
-      venue: VenueId;
-      tableId: string;
-      slot: SlotId;
-      date: string;
-      guests: number;
-      name: string;
-      phone: string;
-      email: string;
-      notes?: string;
-    }
+    kind: 'table';
+    venue: VenueId;
+    tableId: string;
+    slot: SlotId;
+    date: string;
+    guests: number;
+    name: string;
+    phone: string;
+    email: string;
+    notes?: string;
+  }
   | {
-      kind: 'suite';
-      suiteId: string;
-      checkIn: string;
-      checkOut: string;
-      guests: number;
-      name: string;
-      phone: string;
-      email: string;
-      notes?: string;
-    };
+    kind: 'suite';
+    suiteId: string;
+    checkIn: string;
+    checkOut: string;
+    guests: number;
+    name: string;
+    phone: string;
+    email: string;
+    notes?: string;
+  };
 
 export type BookingResult = {
   success: boolean;

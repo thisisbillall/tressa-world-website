@@ -20,16 +20,16 @@ export default function Gallery() {
   const bottom = images.slice(half);
 
   return (
-    <section ref={ref} className="py-32 overflow-hidden bg-white">
+    <section ref={ref} className="relative py-20 md:py-32 overflow-hidden bg-white">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 1 }}
-        className="text-center mb-16 px-6"
+        className="text-center mb-12 md:mb-16 px-6"
       >
-        <p className="text-[11px] tracking-[0.5em] uppercase text-maroon mb-4">Inside Tressa</p>
-        <h2 className="font-serif text-4xl md:text-5xl font-light text-ink">A Glimpse of the World</h2>
+        <p className="text-[10px] sm:text-[11px] tracking-[0.4em] sm:tracking-[0.5em] uppercase text-maroon mb-4">Inside Tressa</p>
+        <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-light text-ink">A Glimpse of the World</h2>
       </motion.div>
 
       <div className="space-y-6">

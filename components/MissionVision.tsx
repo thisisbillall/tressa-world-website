@@ -20,7 +20,7 @@ export default function MissionVision() {
     <section
       ref={ref}
       id="mission-vision"
-      className="relative overflow-hidden bg-[#1a0810] text-cream py-28 md:py-30 px-6 md:px-[8%]"
+      className="relative overflow-hidden bg-[#1a0810] text-cream py-20 md:py-30 px-6 md:px-[8%]"
     >
       <motion.div
         aria-hidden
@@ -39,8 +39,8 @@ export default function MissionVision() {
         transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
         className="relative max-w-7xl mx-auto text-center mb-20 md:mb-28"
       >
-        <p className="text-[10px] tracking-[0.6em] uppercase text-gold mb-5">Philosophy</p>
-        <h2 className="font-serif text-4xl md:text-6xl font-light leading-[1.05]">
+        <p className="text-[10px] tracking-[0.5em] sm:tracking-[0.6em] uppercase text-gold mb-5">Philosophy</p>
+        <h2 className="font-serif text-3xl sm:text-4xl md:text-6xl font-light leading-[1.05]">
           What guides
           <span className="italic text-gold"> every </span>
           evening.
@@ -88,27 +88,27 @@ function Panel({
   align: 'left' | 'right';
   delay: number;
 }) {
-  const fromX = align === 'left' ? -60 : 60;
+  const fromX = align === 'left' ? -30 : 30;
   return (
     <motion.article
       initial={{ opacity: 0, x: fromX }}
       whileInView={{ opacity: 1, x: 0 }}
-      viewport={{ once: true, amount: 0.25 }}
+      viewport={{ once: true, amount: 0.2 }}
       transition={{ duration: 1.1, delay, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className={`relative ${align === 'right' ? 'md:text-right md:pl-6' : 'md:pr-6'}`}
+      className={`relative will-change-transform ${align === 'right' ? 'md:text-right md:pl-6' : 'md:pr-6'}`}
     >
       <div
-        className={`flex items-baseline gap-5 mb-8 ${
+        className={`flex items-baseline gap-4 sm:gap-5 mb-8 flex-wrap ${
           align === 'right' ? 'md:justify-end md:flex-row-reverse md:[&>*]:text-right' : ''
         }`}
       >
-        <span className="font-serif text-[56px] md:text-[72px] leading-none text-gold/25 select-none">
+        <span className="font-serif text-[44px] sm:text-[56px] md:text-[72px] leading-none text-gold/25 select-none">
           {number}
         </span>
-        <span className="text-[10px] tracking-[0.5em] uppercase text-gold">{label}</span>
+        <span className="text-[10px] tracking-[0.4em] sm:tracking-[0.5em] uppercase text-gold">{label}</span>
       </div>
 
-      <h3 className="font-serif text-3xl md:text-[40px] font-light leading-[1.2] text-cream mb-8">
+      <h3 className="font-serif text-2xl sm:text-3xl md:text-[40px] font-light leading-[1.2] text-cream mb-8 break-words">
         {title}
       </h3>
 

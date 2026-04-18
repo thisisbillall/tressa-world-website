@@ -37,9 +37,9 @@ export default function Navbar() {
           : 'bg-transparent py-6'
       }`}
     >
-      <div className="max-w-[1600px] mx-auto px-6 md:px-16 flex items-center justify-between">
-        <Link href="#home" className="flex items-center gap-1" aria-label="TRESSA World home">
-          <div className="relative w-10 h-10 md:w-11 md:h-11">
+      <div className="max-w-[1600px] mx-auto px-5 sm:px-6 md:px-16 flex items-center justify-between gap-3">
+        <Link href="#home" className="flex items-center gap-1 min-w-0" aria-label="TRESSA World home">
+          <div className="relative w-9 h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 flex-shrink-0">
             <Image
               src="/brand/tressa-logo-mark.png"
               alt=""
@@ -50,7 +50,7 @@ export default function Navbar() {
             />
           </div>
           <span
-            className={`font-serif font-medium tracking-[0.29em] text-lg md:text-xl transition-colors ${
+            className={`font-serif font-medium tracking-[0.2em] sm:tracking-[0.29em] text-base sm:text-lg md:text-xl transition-colors ${
               scrolled ? 'text-maroon' : 'text-cream'
             }`}
           >
@@ -73,7 +73,7 @@ export default function Navbar() {
           ))}
         </ul>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
           <TressaLink
             href="/booking"
             className={`hidden md:inline-block px-6 py-3 text-[11px] tracking-[0.25em] uppercase border transition-all duration-500 relative overflow-hidden group ${
@@ -86,7 +86,7 @@ export default function Navbar() {
 
           <button
             onClick={() => setOpen(!open)}
-            className={`lg:hidden ${scrolled ? 'text-maroon' : 'text-cream'}`}
+            className={`lg:hidden p-1 ${scrolled ? 'text-maroon' : 'text-cream'}`}
             aria-label="Menu"
           >
             {open ? <X size={24} /> : <Menu size={24} />}

@@ -23,7 +23,7 @@ export default function Menu() {
     <section
       ref={ref}
       id="menu"
-      className="relative overflow-hidden bg-[#1a0810] text-cream py-28 md:py-30 px-6 md:px-[8%]"
+      className="relative overflow-hidden bg-[#1a0810] text-cream py-20 md:py-30 px-5 sm:px-6 md:px-[8%]"
     >
       {/* ambient blur orbs — same as MissionVision */}
       <motion.div
@@ -44,8 +44,8 @@ export default function Menu() {
         transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
         className="relative max-w-7xl mx-auto text-center mb-16 md:mb-20"
       >
-        <p className="text-[10px] tracking-[0.6em] uppercase text-gold mb-5">Culinary</p>
-        <h2 className="font-serif text-4xl md:text-6xl font-light leading-[1.05]">
+        <p className="text-[10px] tracking-[0.4em] sm:tracking-[0.6em] uppercase text-gold mb-5">Culinary</p>
+        <h2 className="font-serif text-3xl sm:text-4xl md:text-6xl font-light leading-[1.05]">
           The
           <span className="italic text-gold"> Curated </span>
           Menus
@@ -58,7 +58,7 @@ export default function Menu() {
       </motion.header>
 
       {/* ----- Category tabs ----- */}
-      <div className="relative flex justify-center gap-6 md:gap-10 mb-14 flex-wrap">
+      <div className="relative flex justify-center gap-4 sm:gap-6 md:gap-10 mb-12 md:mb-14 flex-wrap">
         {categories.map((c) => {
           const isActive = cat === c.id;
           return (
@@ -68,7 +68,7 @@ export default function Menu() {
               className="group relative px-1 py-2 transition-colors"
             >
               <span
-                className={`font-serif text-[13px] md:text-sm tracking-[0.4em] uppercase transition-colors ${
+                className={`font-serif text-[11px] sm:text-[13px] md:text-sm tracking-[0.25em] sm:tracking-[0.4em] uppercase transition-colors ${
                   isActive ? 'text-gold' : 'text-cream/50 group-hover:text-cream'
                 }`}
               >
@@ -90,7 +90,7 @@ export default function Menu() {
       </div>
 
       {/* ----- Menu grid ----- */}
-      <div className="relative grid md:grid-cols-2 lg:grid-cols-3 gap-7 md:gap-8 max-w-[1400px] mx-auto">
+      <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-[1400px] mx-auto">
         <AnimatePresence mode="popLayout">
           {active?.items.map((item, i) => (
             <motion.article
@@ -124,16 +124,16 @@ export default function Menu() {
                 </div>
               )}
 
-              <div className="relative flex-1 p-6 md:p-7">
-                <div className="flex items-baseline gap-3">
-                  <h3 className="font-serif text-lg md:text-[19px] font-medium text-cream leading-snug">
+              <div className="relative flex-1 p-5 sm:p-6 md:p-7">
+                <div className="flex items-baseline gap-2 sm:gap-3 flex-wrap">
+                  <h3 className="font-serif text-base sm:text-lg md:text-[19px] font-medium text-cream leading-snug min-w-0 break-words">
                     {item.name}
                   </h3>
                   <span
                     aria-hidden
-                    className="flex-1 border-b border-dotted border-gold/30 translate-y-[-4px]"
+                    className="flex-1 border-b border-dotted border-gold/30 translate-y-[-4px] min-w-[20px]"
                   />
-                  <span className="font-serif text-gold text-[15px] md:text-base font-semibold whitespace-nowrap">
+                  <span className="font-serif text-gold text-[14px] sm:text-[15px] md:text-base font-semibold whitespace-nowrap">
                     {item.price}
                   </span>
                 </div>
