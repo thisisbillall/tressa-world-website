@@ -14,7 +14,7 @@ export default function Hero() {
   const scale = useTransform(scrollYProgress, [0, 1], [1, 1.15]);
 
   return (
-    <section id="home" ref={ref} className="relative h-screen overflow-hidden flex items-center justify-center">
+    <section id="home" ref={ref} aria-label="TRESSA World — luxury hospitality in Pune" className="relative h-screen overflow-hidden flex items-center justify-center">
       <motion.div
         style={{ scale }}
         className="absolute inset-0 grain"
@@ -34,7 +34,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 2.1 }}
-          className="text-[11px] md:text-xs tracking-[0.5em] uppercase text-gold mb-6"
+          className="text-[10px] sm:text-[11px] md:text-xs tracking-[0.35em] sm:tracking-[0.5em] uppercase text-gold mb-6"
         >
           {hero.tagline}
         </motion.p>
@@ -43,8 +43,8 @@ export default function Hero() {
           initial={{ opacity: 0, y: 60 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.2, delay: 2.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="font-serif font-light text-cream leading-none tracking-[0.2em] md:tracking-[0.3em]"
-          style={{ fontSize: 'clamp(3.5rem, 10vw, 9rem)' }}
+          className="font-serif font-light text-cream leading-none tracking-[0.12em] sm:tracking-[0.2em] md:tracking-[0.3em]"
+          style={{ fontSize: 'clamp(2.6rem, 10vw, 9rem)' }}
         >
           {hero.title}
           <span className="sr-only"> — Rooftop Lounge, Family Restaurant, Signature Bar & Luxury Suites in Pune</span>
@@ -54,7 +54,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 2.7 }}
-          className="text-[10px] md:text-xs tracking-[0.7em] uppercase text-cream/60 mt-6"
+          className="text-[9px] sm:text-[10px] md:text-xs tracking-[0.3em] sm:tracking-[0.5em] md:tracking-[0.7em] uppercase text-cream/60 mt-6 break-words"
         >
           {hero.subtitle}
         </motion.p>

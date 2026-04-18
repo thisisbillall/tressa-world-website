@@ -7,13 +7,23 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/api/', '/_next/', '/private/', '/admin/', '/admin']
+        disallow: ['/api/', '/admin', '/admin/', '/_next/', '/private/', '/*.json$', '/*?*_rsc=']
       },
-      { userAgent: 'GPTBot', allow: '/' },
       { userAgent: 'Googlebot', allow: '/' },
-      { userAgent: 'Bingbot', allow: '/' }
+      { userAgent: 'Googlebot-Image', allow: '/' },
+      { userAgent: 'Googlebot-News', allow: '/' },
+      { userAgent: 'Bingbot', allow: '/' },
+      { userAgent: 'DuckDuckBot', allow: '/' },
+      { userAgent: 'Slurp', allow: '/' },
+      { userAgent: 'Yandex', allow: '/' },
+      { userAgent: 'Baiduspider', allow: '/' },
+      { userAgent: 'Applebot', allow: '/' },
+      { userAgent: 'GPTBot', allow: '/' },
+      { userAgent: 'ChatGPT-User', allow: '/' },
+      { userAgent: 'Google-Extended', allow: '/' },
+      { userAgent: 'PerplexityBot', allow: '/' },
+      { userAgent: 'Claude-Web', allow: '/' }
     ],
-    sitemap: `${SITE.url}/sitemap.xml`,
-    host: SITE.url
+    sitemap: `${SITE.url}/sitemap.xml`
   };
 }

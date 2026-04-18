@@ -11,7 +11,7 @@ const stats = [
 
 export default function StatsCounter() {
   return (
-    <section className="relative py-32 px-6 md:px-[8%] overflow-hidden bg-maroon">
+    <section className="relative py-20 md:py-32 px-5 sm:px-6 md:px-[8%] overflow-hidden bg-maroon">
       <div className="absolute inset-0 bg-gradient-to-br from-maroon via-maroon-dark to-forest" />
       <div className="absolute inset-0 grain opacity-40 pointer-events-none" />
 
@@ -40,16 +40,16 @@ export default function StatsCounter() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 1 }}
-          className="text-center mb-20"
+          className="text-center mb-14 md:mb-20"
         >
-          <p className="text-[11px] tracking-[0.5em] uppercase text-gold mb-4">By The Numbers</p>
-          <h2 className="font-serif text-4xl md:text-5xl font-light text-cream">
+          <p className="text-[10px] sm:text-[11px] tracking-[0.4em] sm:tracking-[0.5em] uppercase text-gold mb-4">By The Numbers</p>
+          <h2 className="font-serif text-2xl sm:text-3xl md:text-5xl font-light text-cream">
             A legacy <span className="italic text-gold">measured in moments</span>
           </h2>
           <div className="mt-6 mx-auto w-16 h-px bg-gold" />
         </motion.div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-4">
           {stats.map((s, i) => (
             <StatCard key={s.label} {...s} index={i} />
           ))}
@@ -88,20 +88,20 @@ function StatCard({
       initial={{ opacity: 0, y: 60 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.9, delay: index * 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className="group relative p-6 md:p-8 border border-cream/15 backdrop-blur-sm bg-white/[0.02] hover:bg-white/[0.05] transition-all duration-500"
+      className="group relative p-4 sm:p-6 md:p-8 border border-cream/15 backdrop-blur-sm bg-white/[0.02] hover:bg-white/[0.05] transition-all duration-500"
     >
       <div className="absolute -top-px -left-px w-8 h-8 border-t border-l border-gold opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       <div className="absolute -bottom-px -right-px w-8 h-8 border-b border-r border-gold opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-      <div className="flex items-baseline gap-1 font-serif">
-        <motion.span className="text-5xl md:text-6xl lg:text-7xl font-light text-gold">
+      <div className="flex items-baseline gap-1 font-serif flex-wrap">
+        <motion.span className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light text-gold">
           {rounded}
         </motion.span>
-        <span className="text-3xl md:text-4xl font-light text-gold">{suffix}</span>
+        <span className="text-2xl sm:text-3xl md:text-4xl font-light text-gold">{suffix}</span>
       </div>
       <div className="mt-4 h-px w-12 bg-gold/50 group-hover:w-24 transition-all duration-500" />
-      <p className="mt-4 text-sm md:text-base text-cream tracking-wide">{label}</p>
-      <p className="mt-1 text-[10px] tracking-[0.25em] uppercase text-cream/50">{note}</p>
+      <p className="mt-3 sm:mt-4 text-xs sm:text-sm md:text-base text-cream tracking-wide">{label}</p>
+      <p className="mt-1 text-[9px] sm:text-[10px] tracking-[0.2em] sm:tracking-[0.25em] uppercase text-cream/50">{note}</p>
     </motion.div>
   );
 }

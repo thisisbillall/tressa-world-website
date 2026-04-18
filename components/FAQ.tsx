@@ -11,16 +11,16 @@ export default function FAQ() {
   if (!content.faqs.length) return null;
 
   return (
-    <section id="faq" className="py-28 px-6 md:px-[8%] bg-white">
+    <section id="faq" className="py-20 md:py-28 px-5 sm:px-6 md:px-[8%] bg-white overflow-hidden">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 1 }}
-        className="text-center mb-12"
+        className="text-center mb-10 md:mb-12"
       >
-        <p className="text-[11px] tracking-[0.5em] uppercase text-maroon mb-4">Questions</p>
-        <h2 className="font-serif text-4xl md:text-5xl font-light text-ink">Good to Know</h2>
+        <p className="text-[10px] sm:text-[11px] tracking-[0.4em] sm:tracking-[0.5em] uppercase text-maroon mb-4">Questions</p>
+        <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-light text-ink">Good to Know</h2>
       </motion.div>
 
       <div className="max-w-3xl mx-auto divide-y divide-maroon/10">
@@ -53,7 +53,7 @@ export default function FAQ() {
                     transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
                     className="overflow-hidden"
                   >
-                    <p className="pb-5 text-sm text-muted leading-relaxed pr-12">{f.a}</p>
+                    <p className="pb-5 text-sm text-muted leading-relaxed pr-4 sm:pr-12">{f.a}</p>
                   </motion.div>
                 )}
               </AnimatePresence>

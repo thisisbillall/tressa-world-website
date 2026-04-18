@@ -4,39 +4,63 @@ import BookingClient from './BookingClient';
 import { SITE } from '@/lib/seo';
 import { breadcrumbSchema, faqSchema } from '@/lib/jsonld';
 
-const title = 'Book a Table or Luxury Suite — Live 3D Reservation';
+const title = 'Book a Table or Luxury Suite in Pune — Live 3D Reservation';
 const description =
-  'Reserve a table at TRESSA Restaurant, Rooftop or Bar, or book a luxury suite — directly from our interactive 3D floor plan. Real-time availability, four time slots (12 PM – 12 AM), instant confirmation.';
+  'Reserve a table at TRESSA Restaurant, Rooftop or Bar in Pune — or book a luxury suite — directly from our interactive 3D floor plan. Real-time availability, four daily time slots (12 PM – 12 AM), instant confirmation by email and SMS.';
 
 export const metadata: Metadata = {
   title,
   description,
   keywords: [
-    'book a table', 'restaurant reservation', 'rooftop reservation', 'bar reservation',
-    'book a suite', 'luxury suite booking', 'online table booking', 'Tressa booking',
-    'interactive 3D booking', 'private dining reservation'
+    'book a table Pune', 'restaurant reservation Pune', 'rooftop reservation Pune',
+    'bar reservation Pune', 'book a suite Pune', 'luxury suite booking Pune',
+    'online table booking', 'Tressa booking', 'interactive 3D booking',
+    'private dining reservation Pune', 'rooftop lounge booking Pune',
+    'family restaurant booking Pune', 'reservations Koregaon Park',
+    'TRESSA World reservation', 'book rooftop online'
   ],
-  alternates: { canonical: `${SITE.url}/booking` },
+  alternates: {
+    canonical: `${SITE.url}/booking`,
+    languages: {
+      'en-IN': `${SITE.url}/booking`,
+      'en-US': `${SITE.url}/booking`,
+      'x-default': `${SITE.url}/booking`
+    }
+  },
   openGraph: {
     type: 'website',
     url: `${SITE.url}/booking`,
-    title: `Book at ${SITE.name} — Interactive 3D`,
+    title: `Book at ${SITE.name} — Interactive 3D Reservation`,
     description,
-    images: [{ url: SITE.ogImage, width: 1200, height: 630, alt: `${SITE.name} booking` }]
+    siteName: SITE.name,
+    locale: SITE.defaultLocale
   },
   twitter: {
     card: 'summary_large_image',
+    site: SITE.twitter,
+    creator: SITE.twitter,
     title: `Book at ${SITE.name}`,
-    description,
-    images: [SITE.ogImage]
+    description
   },
-  robots: { index: true, follow: true }
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1
+    }
+  }
 };
 
 const bookingFaqs = [
   { q: 'What are the available time slots?', a: '12:00 PM – 3:00 PM, 3:00 PM – 5:00 PM, 5:00 PM – 8:00 PM, and 8:00 PM – 12:00 AM.' },
   { q: 'Is the 3D booking page mobile friendly?', a: 'Yes. You can drag to orbit, pinch to zoom, and tap any table or suite to zoom in and reserve.' },
-  { q: 'Do I get instant confirmation?', a: 'Yes — every booking is confirmed instantly and a copy is sent to your email and phone.' }
+  { q: 'Do I get instant confirmation?', a: 'Yes — every booking is confirmed instantly and a copy is sent to your email and phone.' },
+  { q: 'Can I cancel or modify my booking?', a: 'Yes. Use the cancellation link in your confirmation email or call our reservations desk. Cancellations up to 2 hours before your slot are free.' },
+  { q: 'Is there a booking fee?', a: 'No — reserving a table or suite online is completely free. You only pay for what you order on the day.' }
 ];
 
 export default function Page() {
@@ -56,8 +80,9 @@ export default function Page() {
         name: title,
         description,
         isPartOf: { '@id': `${SITE.url}/#website` },
-        primaryImageOfPage: `${SITE.url}${SITE.ogImage}`,
+        about: { '@id': `${SITE.url}/#localbusiness` },
         inLanguage: 'en-IN',
+        breadcrumb: { '@id': `${SITE.url}/booking#breadcrumb` },
         potentialAction: [
           {
             '@type': 'ReserveAction',
@@ -82,9 +107,8 @@ export default function Page() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      {/* Hidden H1 for crawlers — the visual page is 3D */}
       <h1 className="sr-only">
-        Book a table or a luxury suite at TRESSA World — interactive 3D reservation for restaurant, rooftop, bar and suites.
+        Book a Table or Luxury Suite at TRESSA World Pune — Interactive 3D Reservation for Restaurant, Rooftop, Bar and Suites
       </h1>
       <Suspense fallback={null}>
         <BookingClient />
