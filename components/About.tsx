@@ -2,7 +2,6 @@
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { useSiteContent } from '@/lib/siteContent';
-import { soul } from '@/lib/brandImages';
 
 export default function About() {
   const [content] = useSiteContent();
@@ -33,14 +32,12 @@ export default function About() {
           className="relative h-[340px] sm:h-[420px] md:h-[520px] group overflow-hidden will-change-transform"
         >
           <Image
-            src={soul[0].src}
-            alt={soul[0].alt}
+            src="/images/about/tressa-about-hero.png"
+            alt="TRESSA World — hospitality reimagined"
             fill
             quality={85}
             priority
             sizes="(max-width: 768px) 100vw, 50vw"
-            placeholder="blur"
-            blurDataURL={soul[0].blurDataURL}
             className="object-cover img-enhance transition-transform duration-700 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />

@@ -36,7 +36,7 @@ export default function VideoSection() {
               playsInline
               preload="metadata"
               aria-label={`${v.title} — ${v.captionTitle}`}
-              poster="/images/venues/sky/tressa-sky-01.webp"
+              poster="/images/sky/tressa-sky-rooftop-hero.png"
               className="w-full h-[55vh] sm:h-[70vh] md:h-[90vh] object-cover"
             />
           )}

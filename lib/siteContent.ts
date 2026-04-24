@@ -145,7 +145,7 @@ export const DEFAULT_CONTENT: SiteContent = {
     }
   },
   spaces: [
-    { id: 'rooftop',    name: 'The Sky',           tagline: 'Skyline. Stars. Stories.', desc: 'Unwind above the city with cocktails, live acoustics and a view that never sleeps.', img: '/images/venues/sky/tressa-sky-01.webp' },
+    { id: 'rooftop',    name: 'The Sky',           tagline: 'Skyline. Stars. Stories.', desc: 'Unwind above the city with cocktails, live acoustics and a view that never sleeps.', img: '/images/sky/tressa-sky-rooftop-hero.png' },
     { id: 'restaurant', name: 'Soul · Family Restaurant', tagline: 'Warmth on every plate.', desc: 'A global menu served with the heart of a home kitchen — designed for every generation.', img: '/images/venues/soul/tressa-soul-01.webp' },
     { id: 'bar',        name: 'Unwind · Bar',      tagline: 'Spirits, elevated.',        desc: 'Rare labels, house-aged infusions and bartenders who remember your drink.', img: '/images/venues/unwind/tressa-unwind-01.webp' },
     { id: 'suites',     name: 'Luxury Suites',     tagline: 'Rest, re-imagined.',        desc: 'Curated suites where quiet luxury meets thoughtful design — your private retreat.', img: '/images/cave-dining.jpg' }
@@ -158,10 +158,10 @@ export const DEFAULT_CONTENT: SiteContent = {
   menu: [
     {
       id: 'signatures', name: 'Signatures', items: [
-        { id: 'm1', name: 'Chef’s Signature Fillet', desc: 'Pan-seared fillet, herb crust, vibrant pepper coulis.', price: '₹ 1,080', img: '/images/signature-dish.jpg' },
-        { id: 'm2', name: 'Royal Lamb Raan',         desc: 'Slow-cooked leg of lamb, aromatic spices, saffron pilaf.', price: '₹ 1,240' },
-        { id: 'm3', name: 'Chilli Garlic Starter',   desc: 'Crispy fritters with house-spiced red broth.', price: '₹ 640', img: '/images/signature-starter.jpg' },
-        { id: 'm4', name: 'Charcoal Kebabs',         desc: 'Smoked kebabs with brûlée-topped accompaniment.', price: '₹ 820', img: '/images/signature-kebab.jpg' },
+        { id: 'm1', name: 'Chef’s Signature Fillet', desc: 'Pan-seared fillet, herb crust, vibrant pepper coulis.', price: '₹ 1,080', img: '/images/signature-dishes/tressa-signature-fillet.jpg' },
+        { id: 'm2', name: 'Royal Lamb Raan',         desc: 'Slow-cooked leg of lamb, aromatic spices, saffron pilaf.', price: '₹ 1,240', img: '/images/signature-dishes/tressa-royal-lamb-raan.jpg' },
+        { id: 'm3', name: 'Chilli Garlic Starter',   desc: 'Crispy fritters with house-spiced red broth.', price: '₹ 640', img: '/images/signature-dishes/tressa-chilli-garlic-starter.jpg' },
+        { id: 'm4', name: 'Charcoal Kebabs',         desc: 'Smoked kebabs with brûlée-topped accompaniment.', price: '₹ 820', img: '/images/signature-dishes/tressa-charcoal-kebabs.jpg' },
         { id: 'm5', name: 'Gold Leaf Kulfi',         desc: 'Saffron-pistachio kulfi, 24k gold leaf.', price: '₹ 480' },
         { id: 'm6', name: 'Chocolate Soufflé',       desc: '70% dark chocolate, vanilla bean ice cream.', price: '₹ 520' }
       ]
@@ -188,14 +188,14 @@ export const DEFAULT_CONTENT: SiteContent = {
     }
   ],
   gallery: [
-    { id: 'g1', src: '/images/venues/sky/tressa-sky-04.webp',       alt: 'TRESSA Sky rooftop lounge — evening panorama in Pune' },
+    { id: 'g1', src: '/images/sky/tressa-sky-rooftop-01.png',       alt: 'TRESSA Sky rooftop lounge — evening panorama in Pune' },
     { id: 'g2', src: '/images/venues/soul/tressa-soul-02.webp',     alt: 'TRESSA Soul family restaurant — elegant interior in Pune' },
     { id: 'g3', src: '/images/venues/unwind/tressa-unwind-02.webp', alt: 'TRESSA Unwind bar — signature cocktails and ambient lighting' },
     { id: 'g4', src: '/images/venues/soul/tressa-soul-03.webp',     alt: 'TRESSA Soul — intimate dining moment' },
-    { id: 'g5', src: '/images/venues/sky/tressa-sky-05.webp',       alt: 'TRESSA Sky rooftop — Pune skyline at golden hour' },
+    { id: 'g5', src: '/images/sky/tressa-sky-rooftop-02.png',       alt: 'TRESSA Sky rooftop — Pune skyline at golden hour' },
     { id: 'g6', src: '/images/venues/soul/tressa-soul-04.webp',     alt: 'TRESSA Soul restaurant — table setting detail' },
     { id: 'g7', src: '/images/venues/unwind/tressa-unwind-03.webp', alt: 'TRESSA Unwind bar — crafted evenings' },
-    { id: 'g8', src: '/images/venues/sky/tressa-sky-06.webp',       alt: 'TRESSA Sky terrace seating under the stars' }
+    { id: 'g8', src: '/images/sky/tressa-sky-rooftop-03.png',       alt: 'TRESSA Sky terrace seating under the stars' }
   ],
   marquee: ['The Sky', 'Family Restaurant', 'Signature Bar', 'Luxury Suites', 'Private Dining', 'Banquet Hall'],
   quote: {

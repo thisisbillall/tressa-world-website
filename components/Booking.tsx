@@ -1,7 +1,9 @@
 'use client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { broadcastTables } from '@/utils/broadcast';
+import { useRealtime } from '@/hooks/useRealtime';
 
 const BookingScene3D = dynamic(() => import('./BookingScenes'), { ssr: false });
 
@@ -47,23 +49,212 @@ const venues: Record<Venue, {
     label: 'Rooftop',
     floor: 'Top Floor · Open Sky',
     tagline: 'Stars above, skyline below, cocktails in hand.',
-    image: '/images/venues/sky/tressa-sky-01.webp',
+    image: '/images/sky/tressa-sky-rooftop-hero.png',
     icon: '✦',
     gradient: 'from-[#0a1628] via-[#1a2847] to-[#3d2a5c]',
     accent: '#E3AB32',
   },
 };
 
+declare global {
+  interface Window { Razorpay: any }
+}
+
+function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') return resolve(false);
+    if (window.Razorpay) return resolve(true);
+    const s = document.createElement('script');
+    s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    s.onload = () => resolve(true);
+    s.onerror = () => resolve(false);
+    document.body.appendChild(s);
+  });
+}
+
+type SuiteOption = {
+  id: string;
+  slug: string;
+  name: string;
+  tag: string | null;
+  floor: string | null;
+  description: string | null;
+  price_per_night: string | number;
+  max_guests: number;
+  features: string[];
+  image: string | null;
+};
+
 export default function Booking() {
   const [venue, setVenue] = useState<Venue>('restaurant');
   const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const v = venues[venue];
   const isSuite = venue === 'suite';
 
-  const submit = (e: React.FormEvent) => {
+  // Live suite catalogue, sourced from /api/suites and auto-refreshed via SSE.
+  const [suites, setSuites] = useState<SuiteOption[]>([]);
+  const [suitesLoading, setSuitesLoading] = useState(true);
+  const [selectedSuiteId, setSelectedSuiteId] = useState<string>('');
+  const [checkIn, setCheckIn] = useState('');
+  const [checkOut, setCheckOut] = useState('');
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  const loadSuites = useCallback(async () => {
+    try {
+      const res = await fetch('/api/suites', { cache: 'no-store' });
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        setSuites(json.data);
+        setSelectedSuiteId((curr) => {
+          if (curr && json.data.some((s: SuiteOption) => s.id === curr)) return curr;
+          return json.data[0]?.id || '';
+        });
+      }
+    } catch {
+      // leave prior list in place; SSE will retry
+    } finally {
+      setSuitesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadSuites(); }, [loadSuites]);
+
+  // Live-resync suites whenever the DB row changes (manager edits price etc.)
+  const scheduleSuiteRefresh = useCallback(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(loadSuites, 300);
+  }, [loadSuites]);
+
+  useRealtime({
+    tables: ['suites'],
+    onInsert: scheduleSuiteRefresh,
+    onUpdate: scheduleSuiteRefresh,
+    onDelete: scheduleSuiteRefresh,
+  });
+
+  const selectedSuite = useMemo(
+    () => suites.find((s) => s.id === selectedSuiteId) || null,
+    [suites, selectedSuiteId],
+  );
+
+  const nights = useMemo(() => {
+    if (!checkIn || !checkOut) return 0;
+    const ms = new Date(checkOut).getTime() - new Date(checkIn).getTime();
+    if (!Number.isFinite(ms) || ms <= 0) return 0;
+    return Math.round(ms / (1000 * 60 * 60 * 24));
+  }, [checkIn, checkOut]);
+
+  const suiteTotal = selectedSuite ? Number(selectedSuite.price_per_night) * nights : 0;
+
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setSent(true);
-    setTimeout(() => setSent(false), 4000);
+    if (submitting) return;
+    setErrorMsg(null);
+
+    const fd = new FormData(e.currentTarget);
+    const payload: any = {
+      venue,
+      customer_name: String(fd.get('name') || '').trim(),
+      customer_phone: String(fd.get('phone') || '').trim(),
+      customer_email: String(fd.get('email') || '').trim(),
+      notes: String(fd.get('notes') || '').trim() || undefined,
+    };
+
+    if (isSuite) {
+      if (!selectedSuiteId) {
+        setErrorMsg('Please choose a suite');
+        return;
+      }
+      payload.suite_id = selectedSuiteId;
+      payload.check_in = String(fd.get('checkin') || '');
+      payload.check_out = String(fd.get('checkout') || '');
+      payload.guests = Number(fd.get('guests') || 2);
+    } else {
+      payload.reservation_date = String(fd.get('date') || '');
+      payload.reservation_time = String(fd.get('time') || '');
+      payload.guests = Number(fd.get('guests') || 2);
+    }
+
+    try {
+      setSubmitting(true);
+
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      console.log(res);
+      const json = await res.json();
+      console.log(json);
+      if (!res.ok || !json.success) throw new Error(json.error || 'Booking failed');
+
+      const booking = json.data;
+      broadcastTables(['bookings']);
+
+      // Free venues — done.
+      if (!isSuite) {
+        setSent(true);
+        (e.currentTarget as HTMLFormElement).reset();
+        setTimeout(() => setSent(false), 4000);
+        return;
+      }
+
+      // Suites — open Razorpay checkout.
+      const rzpCfg = json.razorpay;
+      if (!rzpCfg?.order_id) throw new Error('Payment session could not be created');
+
+      const loaded = await loadRazorpayScript();
+      if (!loaded) throw new Error('Could not load payment gateway');
+
+      const rz = new window.Razorpay({
+        key: rzpCfg.key_id,
+        amount: rzpCfg.amount,
+        currency: rzpCfg.currency,
+        order_id: rzpCfg.order_id,
+        name: 'TRESSA World',
+        description: `${payload.suite_name} · ${booking.nights} night(s)`,
+        prefill: {
+          name: payload.customer_name,
+          email: payload.customer_email,
+          contact: payload.customer_phone,
+        },
+        theme: { color: '#5E141E' },
+        handler: async (response: any) => {
+          try {
+            const vr = await fetch('/api/razorpay/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                booking_id: booking.id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+            const vj = await vr.json();
+            if (!vr.ok || !vj.success) throw new Error(vj.error || 'Payment verification failed');
+            broadcastTables(['bookings']);
+            setSent(true);
+            setTimeout(() => setSent(false), 4000);
+            setCheckIn('');
+            setCheckOut('');
+            (document.querySelector('#booking form') as HTMLFormElement | null)?.reset();
+          } catch (err: any) {
+            setErrorMsg(err?.message || 'Payment verification failed');
+          }
+        },
+        modal: {
+          ondismiss: () => setSubmitting(false),
+        },
+      });
+      rz.open();
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Something went wrong');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -189,14 +380,72 @@ export default function Booking() {
               </>
             ) : (
               <>
-                <Select
-                  label="Suite"
-                  name="suite"
-                  options={['Royal Suite (Floor 2)', 'Garden Suite (Floor 1)', 'Heritage Suite (Floor 2)']}
+                <div className="md:col-span-2">
+                  <label className="block text-[10px] tracking-[0.3em] uppercase text-gold mb-2">
+                    Suite * {suitesLoading && <span className="text-cream/40">· loading…</span>}
+                  </label>
+                  <select
+                    name="suite"
+                    required
+                    value={selectedSuiteId}
+                    onChange={(e) => setSelectedSuiteId(e.target.value)}
+                    disabled={suites.length === 0}
+                    className="w-full bg-transparent border-b border-cream/25 text-cream py-2 focus:outline-none focus:border-gold transition-colors appearance-none disabled:opacity-50"
+                    style={{
+                      backgroundImage:
+                        'linear-gradient(45deg, transparent 50%, #E3AB32 50%), linear-gradient(135deg, #E3AB32 50%, transparent 50%)',
+                      backgroundPosition: 'calc(100% - 15px) 14px, calc(100% - 10px) 14px',
+                      backgroundSize: '5px 5px, 5px 5px',
+                      backgroundRepeat: 'no-repeat',
+                    }}
+                  >
+                    {suites.length === 0 && <option value="">No suites available</option>}
+                    {suites.map((s) => (
+                      <option key={s.id} value={s.id} className="bg-maroon text-cream">
+                        {s.name}
+                        {s.floor ? ` (${s.floor})` : ''} — ₹ {Number(s.price_per_night).toLocaleString('en-IN')}/night
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <Field
+                  label="Check-In"
+                  name="checkin"
+                  type="date"
+                  required
+                  value={checkIn}
+                  onChange={(e: any) => setCheckIn(e.target.value)}
                 />
-                <Field label="Check-In" name="checkin" type="date" required />
-                <Field label="Check-Out" name="checkout" type="date" required />
-                <Field label="Guests" name="guests" type="number" min={1} max={8} defaultValue={2} required />
+                <Field
+                  label="Check-Out"
+                  name="checkout"
+                  type="date"
+                  required
+                  value={checkOut}
+                  onChange={(e: any) => setCheckOut(e.target.value)}
+                />
+                <Field
+                  label="Guests"
+                  name="guests"
+                  type="number"
+                  min={1}
+                  max={selectedSuite?.max_guests ?? 8}
+                  defaultValue={2}
+                  required
+                />
+                {selectedSuite && (
+                  <div className="md:col-span-2 flex items-center justify-between bg-gold/5 border border-gold/20 px-4 py-3">
+                    <div className="text-xs tracking-[0.2em] uppercase text-cream/70">
+                      {nights > 0 ? `${nights} night${nights > 1 ? 's' : ''}` : 'Select dates'}
+                      {selectedSuite.max_guests ? ` · up to ${selectedSuite.max_guests} guests` : ''}
+                    </div>
+                    <div className="text-gold font-serif text-lg">
+                      {nights > 0
+                        ? `₹ ${suiteTotal.toLocaleString('en-IN')}`
+                        : `₹ ${Number(selectedSuite.price_per_night).toLocaleString('en-IN')}/night`}
+                    </div>
+                  </div>
+                )}
               </>
             )}
 
@@ -209,18 +458,31 @@ export default function Booking() {
               />
             </div>
 
+            {errorMsg && (
+              <div className="md:col-span-2 text-red-300 text-sm border border-red-400/30 bg-red-950/30 px-4 py-3">
+                {errorMsg}
+              </div>
+            )}
+
             <div className="md:col-span-2 flex items-center justify-between mt-4 flex-wrap gap-4">
               <p className="text-[10px] tracking-[0.2em] uppercase text-cream/50">
-                Confirmation sent via email &amp; SMS
+                {isSuite
+                  ? 'Secure payment via Razorpay'
+                  : 'Confirmation sent via email & SMS'}
               </p>
               <motion.button
                 type="submit"
+                disabled={submitting}
                 whileTap={{ scale: 0.96 }}
-                className="relative overflow-hidden px-10 py-4 text-[11px] tracking-[0.3em] uppercase border border-gold text-maroon bg-gold group"
+                className="relative overflow-hidden px-10 py-4 text-[11px] tracking-[0.3em] uppercase border border-gold text-maroon bg-gold group disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <span className="absolute inset-0 bg-cream translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
                 <span className="relative">
-                  {sent ? 'Reservation Received ✓' : `Reserve at ${v.label}`}
+                  {sent
+                    ? 'Reservation Received ✓'
+                    : submitting
+                      ? (isSuite ? 'Processing…' : 'Sending…')
+                      : (isSuite ? `Pay & Reserve ${v.label}` : `Reserve at ${v.label}`)}
                 </span>
               </motion.button>
             </div>

@@ -14,7 +14,8 @@
 // Coordinate: x → right, z → down. Entry bottom-left, Cash counter bottom.
 // Room: x ∈ [-9, 9], z ∈ [-11, 11]
 
-import type { Table, SlotId } from '@/lib/mockApi';
+import type { Table } from '@/lib/venueTypes';
+import { DEFAULT_AVAILABILITY } from '@/lib/venueConfig';
 import type { LayoutProp } from '@/lib/layouts/sky';
 
 type RawTable = Omit<Table, 'availability'>;
@@ -54,7 +55,7 @@ const TABLES: RawTable[] = [
   { id: 'SL-12', label: 'T12', seats: 6, shape: 'rect', position: [6.5, 0, 1.5], rotation: 0 },
 
   // ---- ROW 5 (z≈+5) ----
-  { id: 'SL-12', label: 'T12', seats: 4, shape: 'square', position: [1.5, 0, 5.0] },
+  { id: 'SL-12b', label: 'T12b', seats: 4, shape: 'square', position: [1.5, 0, 5.0] },
   { id: 'SL-13', label: 'T13', seats: 6, shape: 'rect', position: [6.5, 0, 5.0], rotation: 0 },
   { id: 'SL-14', label: 'T14', seats: 4, shape: 'square', position: [1.5, 0, 8.5] },
   { id: 'SL-15', label: 'T15', seats: 6, shape: 'rect', position: [6.5, 0, 8.5], rotation: 0 },
@@ -140,7 +141,7 @@ export const SOUL_PROPS: LayoutProp[] = [
   })),
   ...Array.from({ length: 14 }, (_, i) => ({
     kind: 'wall' as const,
-    id: `slat-${i}`,
+    id: `slat-b-${i}`,
     position: [0.0, WALL_H / 2, -1.2 + i * 0.5] as [number, number, number],
     size: [0.08, WALL_H * 0.85, 0.08] as [number, number, number],
     color: walnut
@@ -185,7 +186,7 @@ export const SOUL_PROPS: LayoutProp[] = [
   // }),
 
   // ======== PARTITION WALL (vertical, center, separating rows 5-6 from sofa/entry) ========
-  { kind: 'wall', id: 'partition', position: [0.0, WALL_H / 2, 5.2], size: [0.2, WALL_H, 1.0], color: cream },
+  { kind: 'wall', id: 'partition-2', position: [0.0, WALL_H / 2, 5.2], size: [0.2, WALL_H, 1.0], color: cream },
 
   // ======== CASH COUNTER — L-shaped box with glowing LED edges ========
   // Back bar body (horizontal)
@@ -237,31 +238,13 @@ export const SOUL_PROPS: LayoutProp[] = [
   { kind: 'wall', id: 'entry-curtain-R', position: [-8.6, WALL_H / 2, 10.5], size: [0.08, WALL_H, 1.5], color: '#d8ccb8' }
 ];
 
-/* ============================================================
- * Availability + Style
- * ============================================================ */
-
-const hash = (s: string) => {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-  return h;
-};
-
-const availabilityFor = (id: string): Record<SlotId, boolean> => {
-  const h = hash(id);
-  return {
-    lunch: (h & 0b1000) === 0 ? true : (h % 13) > 3,
-    tea: (h & 0b0100) === 0 ? true : (h % 11) > 2,
-    dinner: (h & 0b0010) === 0 ? true : (h % 17) > 4,
-    night: (h & 0b0001) === 0 ? true : (h % 19) > 5
-  };
-};
-
+// Availability comes from the bookings table via /api/availability.
+// BookingClient overlays real reservations on top of this open state.
 export const SOUL_TABLES: Table[] = TABLES.map((t) => ({
   ...t,
-  availability: availabilityFor(t.id),
-  tableColor: '#1a2018',   // dark green-black marble (from venue photos)
-  chairColor: '#b5734a'    // cognac/tan leather (from venue photos)
+  availability: { ...DEFAULT_AVAILABILITY },
+  tableColor: '#1a2018',
+  chairColor: '#b5734a'
 }));
 
 export const SOUL_LAYOUT = {

@@ -51,7 +51,7 @@ export default function RooftopNight() {
             transition={smooth}
             className="md:col-span-5"
           >
-            <CrescentMark />
+            {/* <CrescentMark /> */}
             <h2 className="mt-8 font-serif text-5xl sm:text-6xl md:text-[92px] font-light leading-[0.95] tracking-tight text-cream break-words">
               TRESSA
               <br />
@@ -242,20 +242,20 @@ export default function RooftopNight() {
   );
 }
 
-function CrescentMark() {
-  return (
-    <div className="relative w-14 h-14">
-      <svg viewBox="0 0 60 60" className="w-full h-full text-gold">
-        <defs>
-          <mask id="crescent">
-            <rect width="60" height="60" fill="black" />
-            <circle cx="30" cy="30" r="22" fill="white" />
-            <circle cx="38" cy="25" r="22" fill="black" />
-          </mask>
-        </defs>
-        <circle cx="30" cy="30" r="22" fill="currentColor" mask="url(#crescent)" />
-        <circle cx="30" cy="30" r="26" fill="none" stroke="currentColor" strokeOpacity="0.4" strokeWidth="0.5" />
-      </svg>
-    </div>
-  );
-}
+// function CrescentMark() {
+//   return (
+//     <div className="relative w-14 h-14">
+//       <svg viewBox="0 0 60 60" className="w-full h-full text-gold">
+//         <defs>
+//           <mask id="crescent">
+//             <rect width="60" height="60" fill="black" />
+//             <circle cx="30" cy="30" r="22" fill="white" />
+//             <circle cx="38" cy="25" r="22" fill="black" />
+//           </mask>
+//         </defs>
+//         <circle cx="30" cy="30" r="22" fill="currentColor" mask="url(#crescent)" />
+//         <circle cx="30" cy="30" r="26" fill="none" stroke="currentColor" strokeOpacity="0.4" strokeWidth="0.5" />
+//       </svg>
+//     </div>
+//   );
+// }

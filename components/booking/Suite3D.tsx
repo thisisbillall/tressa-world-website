@@ -3,7 +3,7 @@ import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
-import type { Suite } from '@/lib/mockApi';
+import type { Suite } from '@/lib/venueTypes';
 import {
   artTexture,
   rugTexture,
@@ -19,17 +19,28 @@ type Props = {
   onSelect: (s: Suite) => void;
 };
 
-const TAG_ACCENT: Record<Suite['tag'], string> = {
-  Royal:   '#E3AB32',
-  Premium: '#a63a48',
-  Classic: '#2f7a6b'
+// Accents keyed by tag. Tag comes from the DB and is free text, so we fall
+// back to sensible defaults instead of returning undefined.
+const TAG_ACCENT: Record<string, string> = {
+  Royal:     '#E3AB32',
+  Signature: '#E3AB32',
+  Premium:   '#a63a48',
+  Classic:   '#2f7a6b',
 };
+const DEFAULT_ACCENT = '#E3AB32';
 
-const TAG_WALL: Record<Suite['tag'], string> = {
-  Royal:   '#f7ead0',
-  Premium: '#f2e5d4',
-  Classic: '#e8ebe0'
+const TAG_WALL: Record<string, string> = {
+  Royal:     '#f7ead0',
+  Signature: '#f7ead0',
+  Premium:   '#f2e5d4',
+  Classic:   '#e8ebe0',
 };
+const DEFAULT_WALL = '#f7ead0';
+
+const accentFor = (tag: string | undefined): string =>
+  (tag && TAG_ACCENT[tag]) || DEFAULT_ACCENT;
+const wallFor = (tag: string | undefined): string =>
+  (tag && TAG_WALL[tag]) || DEFAULT_WALL;
 
 // ---------- Bed ----------
 function Bed({ position, accent, size = 'king' }: { position: [number, number, number]; accent: string; size?: 'king' | 'queen' }) {
@@ -300,8 +311,8 @@ export default function Suite3D({ suite, selected, available = true, onSelect }:
     });
   }, [available]);
 
-  const accent = TAG_ACCENT[suite.tag];
-  const wallBase = TAG_WALL[suite.tag];
+  const accent = accentFor(suite.tag);
+  const wallBase = wallFor(suite.tag);
 
   const wood = useMemo(() => woodTexture(), []);
   const wallpaper = useMemo(() => wallpaperTexture(wallBase), [wallBase]);

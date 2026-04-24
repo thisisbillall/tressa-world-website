@@ -12,7 +12,8 @@
 // Coordinate: x → right, z → down. Entry top-right, Washroom bottom-right.
 // Room: x ∈ [-9, 9], z ∈ [-11, 11]
 
-import type { Table, SlotId } from '@/lib/mockApi';
+import type { Table } from '@/lib/venueTypes';
+import { DEFAULT_AVAILABILITY } from '@/lib/venueConfig';
 import type { LayoutProp } from '@/lib/layouts/sky';
 
 type RawTable = Omit<Table, 'availability'>;
@@ -140,32 +141,13 @@ export const UNWIND_PROPS: LayoutProp[] = [
   // ---- ENTRY door (top-right corner) ----
 ];
 
-/* ============================================================
- * Availability + Style
- * ============================================================ */
-
-const hash = (s: string) => {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-  return h;
-};
-
-const availabilityFor = (id: string): Record<SlotId, boolean> => {
-  const h = hash(id);
-  return {
-    lunch: (h & 0b1000) === 0 ? true : (h % 13) > 3,
-    tea: (h & 0b0100) === 0 ? true : (h % 11) > 2,
-    dinner: (h & 0b0010) === 0 ? true : (h % 17) > 4,
-    night: (h & 0b0001) === 0 ? true : (h % 19) > 5
-  };
-};
-
+// Availability comes from the bookings table via /api/availability.
+// BookingClient overlays real reservations on top of this open state.
 export const UNWIND_TABLES: Table[] = TABLES.map((t) => ({
   ...t,
-  availability: availabilityFor(t.id),
-  tableColor: '#1a1a1a',   // dark black marble (from venue photo)
-  chairColor: '#b5734a'    // cognac/tan leather (from venue photo)
-  // NO chairStyle → dining chairs with leather, NOT sofas
+  availability: { ...DEFAULT_AVAILABILITY },
+  tableColor: '#1a1a1a',
+  chairColor: '#b5734a'
 }));
 
 export const UNWIND_LAYOUT = {

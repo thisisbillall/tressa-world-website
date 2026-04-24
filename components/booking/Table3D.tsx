@@ -4,7 +4,7 @@ import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three-stdlib';
-import type { Table } from '@/lib/mockApi';
+import type { Table } from '@/lib/venueTypes';
 import { woodTexture, marbleTexture } from './textures';
 
 type Props = {

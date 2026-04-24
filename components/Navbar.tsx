@@ -26,6 +26,15 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  const scrollToAnchor = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (!href.startsWith('#')) return;
+    e.preventDefault();
+    const id = href.slice(1);
+    const el = id ? document.getElementById(id) : document.documentElement;
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    else window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <motion.nav
       initial={{ y: -50, opacity: 0 }}
@@ -38,7 +47,12 @@ export default function Navbar() {
       }`}
     >
       <div className="max-w-[1600px] mx-auto px-5 sm:px-6 md:px-16 flex items-center justify-between gap-3">
-        <Link href="#home" className="flex items-center gap-1 min-w-0" aria-label="TRESSA World home">
+        <Link
+          href="#home"
+          onClick={(e) => scrollToAnchor(e as unknown as React.MouseEvent<HTMLAnchorElement>, '#home')}
+          className="flex items-center gap-1 min-w-0"
+          aria-label="TRESSA World home"
+        >
           <div className="relative w-9 h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 flex-shrink-0">
             <Image
               src="/brand/tressa-logo-mark.png"
@@ -63,6 +77,7 @@ export default function Navbar() {
             <li key={l.href}>
               <a
                 href={l.href}
+                onClick={(e) => scrollToAnchor(e, l.href)}
                 className={`nav-link relative text-[11px] tracking-[0.25em] uppercase font-medium transition-colors ${
                   scrolled ? 'text-ink hover:text-maroon' : 'text-cream hover:text-gold'
                 }`}
@@ -106,7 +121,7 @@ export default function Navbar() {
               <li key={l.href}>
                 <a
                   href={l.href}
-                  onClick={() => setOpen(false)}
+                  onClick={(e) => { scrollToAnchor(e, l.href); setOpen(false); }}
                   className="text-ink text-sm tracking-[0.2em] uppercase"
                 >
                   {l.label}

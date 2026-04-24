@@ -1,22 +1,20 @@
 'use client';
 import dynamic from 'next/dynamic';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import TressaLink from '@/components/TressaLink';
 import { ArrowLeft, Loader2, Move, RotateCcw } from 'lucide-react';
 import { useSiteContent } from '@/lib/siteContent';
-import {
-  fetchVenue,
-  TIME_SLOTS,
-  type SlotId,
-  type Suite,
-  type Table,
-  type VenueData,
-  type VenueId
-} from '@/lib/mockApi';
+import { fetchVenue } from '@/lib/venue';
+import { TIME_SLOTS } from '@/lib/venueConfig';
+import type { SlotId, Suite, Table, VenueData, VenueId } from '@/lib/venueTypes';
 import BookingPanel from '@/components/booking/BookingPanel';
+import { useRealtime } from '@/hooks/useRealtime';
+import { apiFetch } from '@/lib/apiClient';
+
+type SuiteRange = { suite_name: string; check_in: string; check_out: string };
 
 const Scene3D = dynamic(() => import('@/components/booking/Scene3D'), {
   ssr: false,
@@ -34,7 +32,7 @@ const VENUES: { id: VenueId; label: string; disabled?: boolean }[] = [
   { id: 'suites', label: 'Aura · Coming Soon', disabled: true }
 ];
 
-// Suites (Aura) is under development — not a valid target until launch.
+// Suites are under development — not a valid target until launch.
 const VALID_VENUES: VenueId[] = ['restaurant', 'rooftop', 'bar'];
 
 export default function BookingClient() {
@@ -64,6 +62,43 @@ export default function BookingClient() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [resetKey, setResetKey] = useState(0);
 
+  // Live availability sourced from the bookings table via SSE.
+  const [reservedTableRefs, setReservedTableRefs] = useState<Set<string>>(new Set());
+  const [reservedSuiteRanges, setReservedSuiteRanges] = useState<SuiteRange[]>([]);
+  const availabilityDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  const apiVenue = venueId === 'suites' ? 'suite' : venueId;
+
+  const loadAvailability = useCallback(async () => {
+    try {
+      const qs = new URLSearchParams({ venue: apiVenue, date, slot });
+      const json = await apiFetch<any>(`/api/availability?${qs.toString()}`, { cache: 'no-store' });
+      setReservedTableRefs(new Set<string>(json.reserved_tables || []));
+      setReservedSuiteRanges(json.reserved_suite_ranges || []);
+    } catch (e: any) {
+      console.warn('[availability]', e?.message || e);
+    }
+  }, [apiVenue, date, slot]);
+
+  useEffect(() => { loadAvailability(); }, [loadAvailability]);
+
+  // Any booking insert/update/delete invalidates availability for every open client.
+  useRealtime({
+    tables: ['bookings'],
+    onInsert: () => {
+      if (availabilityDebounceRef.current) clearTimeout(availabilityDebounceRef.current);
+      availabilityDebounceRef.current = setTimeout(loadAvailability, 300);
+    },
+    onUpdate: () => {
+      if (availabilityDebounceRef.current) clearTimeout(availabilityDebounceRef.current);
+      availabilityDebounceRef.current = setTimeout(loadAvailability, 300);
+    },
+    onDelete: () => {
+      if (availabilityDebounceRef.current) clearTimeout(availabilityDebounceRef.current);
+      availabilityDebounceRef.current = setTimeout(loadAvailability, 300);
+    },
+  });
+
   // Lock page scroll — the 3D canvas must own touch gestures on mobile
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -71,23 +106,73 @@ export default function BookingClient() {
     return () => { document.body.style.overflow = prev; };
   }, []);
 
+  const reloadVenue = useCallback(async () => {
+    const v = await fetchVenue(venueId);
+    setVenue(v);
+    setLoading(false);
+  }, [venueId]);
+
   useEffect(() => {
     setLoading(true);
     setSelectedTable(null);
     setSelectedSuite(null);
     setPanelOpen(false);
-    fetchVenue(venueId).then((v) => {
-      setVenue(v);
-      setLoading(false);
-    });
-  }, [venueId]);
+    reloadVenue();
+  }, [venueId, reloadVenue]);
+
+  // Suite pricing / catalogue changes (e.g. manager edits a row) → resync the
+  // 3D scene so positions stay put but prices refresh. Only matters on 'suites'.
+  const suitesDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  useRealtime({
+    tables: ['suites'],
+    onInsert: () => {
+      if (venueId !== 'suites') return;
+      if (suitesDebounceRef.current) clearTimeout(suitesDebounceRef.current);
+      suitesDebounceRef.current = setTimeout(reloadVenue, 300);
+    },
+    onUpdate: () => {
+      if (venueId !== 'suites') return;
+      if (suitesDebounceRef.current) clearTimeout(suitesDebounceRef.current);
+      suitesDebounceRef.current = setTimeout(reloadVenue, 300);
+    },
+    onDelete: () => {
+      if (venueId !== 'suites') return;
+      if (suitesDebounceRef.current) clearTimeout(suitesDebounceRef.current);
+      suitesDebounceRef.current = setTimeout(reloadVenue, 300);
+    },
+  });
+
+  // Merge DB availability into venue.tables so Scene3D's existing
+  // `table.availability[slot]` logic reflects actual bookings.
+  const liveVenue = useMemo<VenueData | null>(() => {
+    if (!venue) return null;
+    if (!venue.tables || reservedTableRefs.size === 0) return venue;
+    return {
+      ...venue,
+      tables: venue.tables.map((t) =>
+        reservedTableRefs.has(t.label)
+          ? { ...t, availability: { ...t.availability, [slot]: false } }
+          : t,
+      ),
+    };
+  }, [venue, reservedTableRefs, slot]);
 
   const availableCount = useMemo(() => {
-    if (!venue?.tables) return 0;
-    return venue.tables.filter((t) => t.availability[slot]).length;
-  }, [venue, slot]);
+    if (!liveVenue?.tables) return 0;
+    return liveVenue.tables.filter((t) => t.availability[slot]).length;
+  }, [liveVenue, slot]);
+
+  const suiteOccupancy = useMemo(() => {
+    // suite_name → count of active/future bookings
+    const map = new Map<string, number>();
+    for (const r of reservedSuiteRanges) {
+      map.set(r.suite_name, (map.get(r.suite_name) || 0) + 1);
+    }
+    return map;
+  }, [reservedSuiteRanges]);
 
   const handleSelectTable = (t: Table) => {
+    if (reservedTableRefs.has(t.label)) return; // already booked for this slot/date
     setTimeout(() => setPanelOpen(true), 900);
     setSelectedTable(t);
     setSelectedSuite(null);
@@ -122,10 +207,10 @@ export default function BookingClient() {
 
       {/* 3D canvas */}
       <div className="absolute inset-0 touch-none" style={{ touchAction: 'none' }}>
-        {venue && !loading && (
+        {liveVenue && !loading && (
           <Scene3D
-            key={`${venue.id}-${resetKey}`}
-            venue={venue}
+            key={`${liveVenue.id}-${resetKey}`}
+            venue={liveVenue}
             slot={slot}
             selectedId={selectedTable?.id ?? selectedSuite?.id ?? null}
             onSelectTable={handleSelectTable}
@@ -162,7 +247,7 @@ export default function BookingClient() {
             ))}
           </div>
 
-          {venue?.tables && (
+          {liveVenue?.tables && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -199,19 +284,20 @@ export default function BookingClient() {
               <div className="text-right shrink-0 pl-2 md:pl-4 border-l border-maroon/10">
                 <p className="text-[8px] md:text-[9px] tracking-[0.2em] md:tracking-[0.3em] uppercase text-maroon">Open</p>
                 <p className="font-serif text-lg md:text-2xl text-maroon">
-                  {availableCount}<span className="text-muted text-[10px] md:text-sm">/{venue.tables.length}</span>
+                  {availableCount}<span className="text-muted text-[10px] md:text-sm">/{liveVenue.tables.length}</span>
                 </p>
               </div>
             </motion.div>
           )}
 
-          {venue?.suites && (
+          {liveVenue?.suites && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="bg-white/90 backdrop-blur-md border border-maroon/10 p-4 md:p-5 text-[11px] tracking-[0.2em] uppercase text-muted shadow-[0_10px_40px_rgba(94,20,30,0.08)]"
             >
-              Click a suite to preview and pick your dates. {venue.suites.length} suites available.
+              Click a suite to preview and pick your dates. {liveVenue.suites.length} suites available
+              {reservedSuiteRanges.length > 0 && ` · ${reservedSuiteRanges.length} active booking${reservedSuiteRanges.length > 1 ? 's' : ''}`}.
             </motion.div>
           )}
         </div>

@@ -7,9 +7,10 @@
 //   Rotations are radians around the Y axis (Math.PI / 2 = 90° turn).
 //
 // Pure data file — edit table positions, seats, shape, or rotation here and the
-// 3D scene updates automatically (consumed by `lib/mockApi.ts`).
+// 3D scene updates automatically (consumed by `lib/venue.ts`).
 
-import type { Table, SlotId } from '@/lib/mockApi';
+import type { Table } from '@/lib/venueTypes';
+import { DEFAULT_AVAILABILITY } from '@/lib/venueConfig';
 
 export type LayoutProp =
   | { kind: 'wall'; id: string; position: [number, number, number]; size: [number, number, number]; rotation?: number; color?: string; label?: string }
@@ -117,31 +118,13 @@ export const SKY_PROPS: LayoutProp[] = [
   { kind: 'rock', id: 'divider-rock', position: [1.30, WALL_H / 2, 7.3], size: [5.5, WALL_H, 0.25], color: '#c9a07c' }
 ];
 
-/* ============================================================
- * Availability — deterministic per-table so reloads don't shuffle
- * ============================================================ */
-
-const hash = (s: string) => {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-  return h;
-};
-
-const availabilityFor = (id: string): Record<SlotId, boolean> => {
-  const h = hash(id);
-  return {
-    lunch: (h & 0b1000) === 0 ? true : (h % 13) > 3,
-    tea: (h & 0b0100) === 0 ? true : (h % 11) > 2,
-    dinner: (h & 0b0010) === 0 ? true : (h % 17) > 4,
-    night: (h & 0b0001) === 0 ? true : (h % 19) > 5
-  };
-};
-
+// Availability comes from the bookings table via /api/availability.
+// Every table starts open; BookingClient overlays real reservations.
 export const SKY_TABLES: Table[] = TABLES.map((t) => ({
   ...t,
-  availability: availabilityFor(t.id),
-  tableColor: '#1a1a1a',   // black tables
-  chairColor: '#6b6b6b'    // gray sofa chairs
+  availability: { ...DEFAULT_AVAILABILITY },
+  tableColor: '#1a1a1a',
+  chairColor: '#6b6b6b'
 }));
 
 export const SKY_LAYOUT = {

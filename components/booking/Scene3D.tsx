@@ -7,7 +7,7 @@ import { RoundedBoxGeometry } from 'three-stdlib';
 import { Html } from '@react-three/drei';
 import Table3D from './Table3D';
 import Suite3D from './Suite3D';
-import type { Suite, SlotId, Table, VenueData, VenueProp } from '@/lib/mockApi';
+import type { Suite, SlotId, Table, VenueData, VenueProp } from '@/lib/venueTypes';
 
 type Props = {
   venue: VenueData;

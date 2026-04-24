@@ -58,7 +58,7 @@ export default function Home() {
         '@type': 'VideoObject',
         name: `${SITE.name} — A World of Experiences`,
         description: 'An evening at TRESSA World — rooftop lounge, fine dining restaurant, signature bar and luxury suites in Pune.',
-        thumbnailUrl: [`${SITE.url}/images/venues/sky/tressa-sky-01.webp`],
+        thumbnailUrl: [`${SITE.url}/images/sky/tressa-sky-rooftop-hero.png`],
         uploadDate: SITE.business.foundingDate,
         contentUrl: `${SITE.url}/videos/tressa-hero.mp4`,
         embedUrl: SITE.url,
@@ -93,8 +93,8 @@ export default function Home() {
 
         {/* 3. What we offer */}
         <Spaces />
-        <VideoSection />
-        <Menu />
+        {/* <VideoSection /> */}
+        {/* <Menu /> */}
 
         {/* 4. Atmosphere / moments */}
         <RooftopNight />
