@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 import TressaLink from './TressaLink';
 
@@ -12,12 +13,21 @@ const LINKS = [
   { href: '#experience', label: 'Experience' },
   { href: '#menu', label: 'Menu' },
   // { href: '#suites', label: 'Suites' }, // Aura — under development
-  { href: '#contact', label: 'Contact' }
+  { href: '#contact', label: 'Contact' },
+  { href: '/terms', label: 'Terms' }
 ];
 
 export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
+  const [scrolledRaw, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Inner pages (everything other than the home page) don't have the dark
+  // hero behind the nav, so the transparent / cream-text state is invisible
+  // against their lighter / different backgrounds. Force the solid state
+  // there so the nav is always readable.
+  const isHome = pathname === '/' || pathname === '';
+  const scrolled = scrolledRaw || !isHome;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -26,8 +36,18 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  // For hash links the in-page smooth-scroll only makes sense when those
+  // sections actually exist — i.e. we're on the home page. On inner routes
+  // (/terms, /booking) we rewrite "#about" to "/#about" and let the browser
+  // navigate so the link goes back to home and lands on the right section.
+  const resolveHref = (href: string) => {
+    if (!href.startsWith('#')) return href;
+    return isHome ? href : `/${href}`;
+  };
+
   const scrollToAnchor = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (!href.startsWith('#')) return;
+    if (!isHome) return; // let the browser navigate to "/#section"
     e.preventDefault();
     const id = href.slice(1);
     const el = id ? document.getElementById(id) : document.documentElement;
@@ -37,10 +57,20 @@ export default function Navbar() {
 
   return (
     <motion.nav
-      initial={{ y: -50, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.9, delay: 1.7, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+      // The delayed entrance animation is timed for the home page Preloader.
+      // Inner routes (/terms, /booking) have no preloader, so we render the
+      // navbar immediately in its final state — and skip the scroll-driven
+      // colour transition entirely so it stays constant white.
+      initial={isHome ? { y: -50, opacity: 0 } : false}
+      animate={isHome ? { y: 0, opacity: 1 } : { y: 0, opacity: 1 }}
+      transition={
+        isHome
+          ? { duration: 0.9, delay: 1.7, ease: [0.25, 0.46, 0.45, 0.94] }
+          : { duration: 0 }
+      }
+      className={`fixed top-0 left-0 right-0 z-50 ${
+        isHome ? 'transition-all duration-500' : ''
+      } ${
         scrolled
           ? 'bg-white/90 backdrop-blur-xl py-4 border-b border-maroon/10 shadow-[0_1px_30px_rgba(0,0,0,0.04)]'
           : 'bg-transparent py-6'
@@ -48,7 +78,7 @@ export default function Navbar() {
     >
       <div className="max-w-[1600px] mx-auto px-5 sm:px-6 md:px-16 flex items-center justify-between gap-3">
         <Link
-          href="#home"
+          href={isHome ? '#home' : '/'}
           onClick={(e) => scrollToAnchor(e as unknown as React.MouseEvent<HTMLAnchorElement>, '#home')}
           className="flex items-center gap-1 min-w-0"
           aria-label="TRESSA World home"
@@ -76,7 +106,7 @@ export default function Navbar() {
           {LINKS.map((l) => (
             <li key={l.href}>
               <a
-                href={l.href}
+                href={resolveHref(l.href)}
                 onClick={(e) => scrollToAnchor(e, l.href)}
                 className={`nav-link relative text-[11px] tracking-[0.25em] uppercase font-medium transition-colors ${
                   scrolled ? 'text-ink hover:text-maroon' : 'text-cream hover:text-gold'
@@ -120,7 +150,7 @@ export default function Navbar() {
             {LINKS.map((l) => (
               <li key={l.href}>
                 <a
-                  href={l.href}
+                  href={resolveHref(l.href)}
                   onClick={(e) => { scrollToAnchor(e, l.href); setOpen(false); }}
                   className="text-ink text-sm tracking-[0.2em] uppercase"
                 >

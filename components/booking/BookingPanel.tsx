@@ -18,22 +18,41 @@ type Props = {
   onClose: () => void;
 };
 
-type Result = { id: string; message: string; reference?: string };
+type Result = { id: string; message: string; reference?: string; bookingCode?: string };
 
 declare global {
   interface Window { Razorpay: any }
 }
 
+// Singleton promise so a prefetch + post-POST call don't start two requests.
+let razorpayScriptPromise: Promise<boolean> | null = null;
+
 function loadRazorpayScript(): Promise<boolean> {
-  return new Promise((resolve) => {
-    if (typeof window === 'undefined') return resolve(false);
-    if (window.Razorpay) return resolve(true);
+  if (typeof window === 'undefined') return Promise.resolve(false);
+  if (window.Razorpay) return Promise.resolve(true);
+  if (razorpayScriptPromise) return razorpayScriptPromise;
+
+  razorpayScriptPromise = new Promise((resolve) => {
+    const existing = document.querySelector<HTMLScriptElement>(
+      'script[data-rzp-checkout]'
+    );
+    if (existing) {
+      existing.addEventListener('load', () => resolve(true));
+      existing.addEventListener('error', () => resolve(false));
+      return;
+    }
     const s = document.createElement('script');
     s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    s.async = true;
+    s.dataset.rzpCheckout = 'true';
     s.onload = () => resolve(true);
-    s.onerror = () => resolve(false);
+    s.onerror = () => {
+      razorpayScriptPromise = null; // allow retry on next submit
+      resolve(false);
+    };
     document.body.appendChild(s);
   });
+  return razorpayScriptPromise;
 }
 
 export default function BookingPanel({ open, venue, selectedTable, selectedSuite, slot, date, onClose }: Props) {
@@ -44,6 +63,14 @@ export default function BookingPanel({ open, venue, selectedTable, selectedSuite
   const isSuite = !!selectedSuite;
   const slotLabel = TIME_SLOTS.find((s) => s.id === slot)?.label;
   const slotStart = TIME_SLOTS.find((s) => s.id === slot)?.start ?? '19:00';
+
+  // Warm up the Razorpay checkout script the instant the panel opens.
+  // Fetching it in parallel with the user filling in the form means the
+  // modal opens instantly after the booking POST returns, instead of waiting
+  // for a 50-100 KB download to complete.
+  useEffect(() => {
+    if (open) void loadRazorpayScript();
+  }, [open]);
 
   // Live suite pricing — fetched fresh from /api/suites each time a suite is
   // selected, re-fetched whenever the suites table changes via SSE.
@@ -94,14 +121,42 @@ export default function BookingPanel({ open, venue, selectedTable, selectedSuite
     onDelete: refreshVenueCharge,
   });
 
-  // Track guest count for the live total row.
-  const [guestCount, setGuestCount] = useState<number>(2);
+  // Seat-aware guest range. For a 6-seat table: default 5, min 5, no hard max.
+  // Anything above the seat count is accepted but flagged as a special booking
+  // (server double-checks via findTableSeats — client can't forge the flag).
+  const tableSeats = selectedTable?.seats ?? 0;
+  const minGuests = isSuite ? 1 : Math.max(1, tableSeats - 1);
+  const defaultGuests = isSuite ? 2 : minGuests;
+
+  const [guestCount, setGuestCount] = useState<number>(defaultGuests);
+
+  // Re-seed whenever the selected table changes (opening a different table
+  // panel shouldn't keep the stale guest count from a previous one).
+  useEffect(() => { setGuestCount(defaultGuests); }, [defaultGuests]);
+
+  const isSpecial = !isSuite && tableSeats > 0 && guestCount > tableSeats;
   const tableTotal = isSuite ? 0 : venueCharge * guestCount;
+
+  // Guest must explicitly accept the T&C before payment / confirmation runs.
+  // Reset whenever the panel opens for a fresh booking, otherwise a previous
+  // session's "agreed" state would silently carry over.
+  const [agreedTerms, setAgreedTerms] = useState(false);
+  useEffect(() => {
+    if (open) {
+      setAgreedTerms(false);
+      setErrorMsg(null);
+    }
+  }, [open, selectedTable, selectedSuite]);
 
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (sending) return;
     setErrorMsg(null);
+
+    if (!agreedTerms) {
+      setErrorMsg('Please accept the Terms & Conditions to continue.');
+      return;
+    }
 
     const f = new FormData(e.currentTarget);
     const name = String(f.get('name') || '').trim();
@@ -155,6 +210,7 @@ export default function BookingPanel({ open, venue, selectedTable, selectedSuite
           id: booking.id,
           reference: `BKG-${String(booking.id).slice(0, 8).toUpperCase()}`,
           message: msg,
+          bookingCode: booking.booking_code,
         });
         setSending(false);
         return;
@@ -225,6 +281,7 @@ export default function BookingPanel({ open, venue, selectedTable, selectedSuite
               id: vj.data.id,
               reference: `BKG-${String(vj.data.id).slice(0, 8).toUpperCase()}`,
               message: msg,
+              bookingCode: vj.data.booking_code,
             });
           } catch (err: any) {
             setErrorMsg(err?.message || 'Payment verification failed');
@@ -295,7 +352,22 @@ export default function BookingPanel({ open, venue, selectedTable, selectedSuite
                     <p className="text-[10px] tracking-[0.3em] uppercase text-gold mt-2">{result.reference}</p>
                   )}
                   <p className="mt-6 text-sm text-muted leading-relaxed">{result.message}</p>
-                  <p className="mt-6 text-xs text-muted/70">A confirmation has been sent to your email and phone.</p>
+
+                  {result.bookingCode && (
+                    <div className="mt-8 bg-gold/10 border border-gold px-5 py-5 text-left">
+                      <p className="text-[9px] tracking-[0.35em] uppercase text-maroon">
+                        Instant 15% off · Show at visit
+                      </p>
+                      <p className="mt-3 font-mono text-2xl tracking-[0.25em] text-maroon text-center">
+                        {result.bookingCode}
+                      </p>
+                      <p className="mt-3 text-[11px] text-muted/80 leading-relaxed">
+                        Present this code at our in-venue app when billing to unlock 15% off your total bill.
+                      </p>
+                    </div>
+                  )}
+
+                  <p className="mt-6 text-xs text-muted/70">A confirmation SMS has been sent to your phone.</p>
                   <button onClick={close} className="btn-primary mt-10"><span>Done</span></button>
                 </motion.div>
               ) : (
@@ -336,18 +408,30 @@ export default function BookingPanel({ open, venue, selectedTable, selectedSuite
                     ) : null}
 
                     <TextInput
-                      label="Guests"
+                      label={
+                        isSuite
+                          ? 'Guests'
+                          : `Guests · min ${minGuests} · ${tableSeats}+ seats`
+                      }
                       name="guests"
                       type="number"
-                      min={1}
-                      max={isSuite ? 8 : selectedTable!.seats}
-                      defaultValue={2}
+                      min={minGuests}
+                      max={isSuite ? 8 : undefined}
+                      value={guestCount}
                       required
                       onChange={(e: any) => {
                         const n = Number(e.target.value || 0);
                         if (Number.isFinite(n) && n > 0) setGuestCount(n);
                       }}
                     />
+
+                    {isSpecial && (
+                      <p className="text-[11px] tracking-[0.15em] text-maroon bg-gold/10 border border-gold/30 px-3 py-2 leading-relaxed">
+                        This table seats {tableSeats}. Booking for {guestCount} will be
+                        marked a <strong>special booking</strong> — our team will
+                        arrange extra seating. Per-guest charge is unchanged.
+                      </p>
+                    )}
 
                     <div>
                       <label className="block text-[9px] tracking-[0.3em] uppercase text-maroon mb-2">Special Requests</label>
@@ -380,6 +464,43 @@ export default function BookingPanel({ open, venue, selectedTable, selectedSuite
                       </div>
                     )}
 
+                    <div className="flex items-start gap-3 border border-gold/40 bg-gold/[0.06] px-4 py-3">
+                      <span className="text-gold font-serif text-lg leading-none pt-0.5">%</span>
+                      <div>
+                        <p className="text-[10px] tracking-[0.25em] uppercase text-maroon font-medium">
+                          GET UPTO 15% off at the venue
+                        </p>
+                        {/* <p className="text-[11px] text-muted leading-relaxed mt-1">
+                          We'll SMS you a unique code after booking — show it at our
+                          in-venue app when billing and get upto 15% off your total bill.
+                        </p> */}
+                      </div>
+                    </div>
+
+                    <label className="flex items-start gap-3 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={agreedTerms}
+                        onChange={(e) => setAgreedTerms(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 accent-maroon flex-shrink-0 cursor-pointer"
+                      />
+                      <span className="text-[11px] text-muted leading-relaxed">
+                        I agree to TRESSA World&apos;s{' '}
+                        <a
+                          href="/terms"
+                          target="_blank"
+                          rel="noopener"
+                          className="text-maroon underline hover:text-gold"
+                        >
+                          Terms &amp; Refund Policy
+                        </a>
+                        {(isSuite || tableTotal > 0) && (
+                          <>, including the cancellation and refund rules that apply to this booking</>
+                        )}
+                        .
+                      </span>
+                    </label>
+
                     {errorMsg && (
                       <p className="text-[11px] text-red-600 bg-red-50 border border-red-200 px-3 py-2">
                         {errorMsg}
@@ -388,8 +509,8 @@ export default function BookingPanel({ open, venue, selectedTable, selectedSuite
 
                     <button
                       type="submit"
-                      disabled={sending}
-                      className="w-full relative overflow-hidden py-4 text-[11px] tracking-[0.3em] uppercase bg-maroon text-cream font-medium group disabled:opacity-60"
+                      disabled={sending || !agreedTerms}
+                      className="w-full relative overflow-hidden py-4 text-[11px] tracking-[0.3em] uppercase bg-maroon text-cream font-medium group disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       <span className="absolute inset-0 bg-gold translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
                       <span className="relative group-hover:text-maroon transition-colors">

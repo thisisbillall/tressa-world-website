@@ -35,30 +35,30 @@ type RawTable = Omit<Table, 'availability'>;
 
 const TABLES: RawTable[] = [
   // ---- ROW 1 (z≈-9, right side of "Empty" area) ----
-  { id: 'SL-01', label: 'T1', seats: 4, shape: 'square', position: [-1.6, 0, -9.0] },
-  { id: 'SL-02', label: 'T2', seats: 4, shape: 'square', position: [1.5, 0, -9.0] },
-  { id: 'SL-03', label: 'T3', seats: 6, shape: 'rect', position: [6.5, 0, -9.0], rotation: 0 },
+  { id: 'SL-01', label: 'F-1', seats: 4, shape: 'square', position: [-1.6, 0, -9.0] },
+  { id: 'SL-02', label: 'F-2', seats: 4, shape: 'square', position: [1.5, 0, -9.0] },
+  { id: 'SL-03', label: 'F-3', seats: 6, shape: 'rect', position: [6.5, 0, -9.0], rotation: 0 },
 
   // ---- ROW 2 (z≈-5.5) ----
-  { id: 'SL-04', label: 'T4', seats: 8, shape: 'rect', position: [-5.5, 0, -5.5], rotation: 0 },
-  { id: 'SL-05', label: 'T5', seats: 4, shape: 'square', position: [1.5, 0, 1.5] },
-  { id: 'SL-06', label: 'T6', seats: 6, shape: 'rect', position: [6.5, 0, -5.5], rotation: 0 },
+  { id: 'SL-04', label: 'F-4', seats: 8, shape: 'rect', position: [-5.5, 0, -5.5], rotation: 0 },
+  { id: 'SL-05', label: 'F-5', seats: 4, shape: 'square', position: [1.5, 0, 1.5] },
+  { id: 'SL-06', label: 'F-6', seats: 6, shape: 'rect', position: [6.5, 0, -5.5], rotation: 0 },
 
   // ---- ROW 3 (z≈-2) ----
-  { id: 'SL-07', label: 'T7', seats: 4, shape: 'square', position: [-5.5, 0, -2.0] },
-  { id: 'SL-08', label: 'T8', seats: 4, shape: 'square', position: [1.5, 0, -2.0] },
-  { id: 'SL-09', label: 'T9', seats: 4, shape: 'square', position: [-1.5, 0, -2.0] },
-  { id: 'SL-10', label: 'T10', seats: 6, shape: 'rect', position: [6.5, 0, -2.0], rotation: 0 },
+  { id: 'SL-07', label: 'F-7', seats: 4, shape: 'square', position: [-5.5, 0, -2.0] },
+  { id: 'SL-08', label: 'F-8', seats: 4, shape: 'square', position: [1.5, 0, -2.0] },
+  { id: 'SL-09', label: 'F-9', seats: 4, shape: 'square', position: [-1.5, 0, -2.0] },
+  { id: 'SL-10', label: 'F-10', seats: 6, shape: 'rect', position: [6.5, 0, -2.0], rotation: 0 },
 
   // ---- ROW 4 (z≈+1.5) ----
-  { id: 'SL-11', label: 'T11', seats: 4, shape: 'square', position: [-5.5, 0, 1.5] },
-  { id: 'SL-12', label: 'T12', seats: 6, shape: 'rect', position: [6.5, 0, 1.5], rotation: 0 },
+  { id: 'SL-11', label: 'F-11', seats: 4, shape: 'square', position: [-5.5, 0, 1.5] },
+  { id: 'SL-12', label: 'F-12', seats: 6, shape: 'rect', position: [6.5, 0, 1.5], rotation: 0 },
 
   // ---- ROW 5 (z≈+5) ----
-  { id: 'SL-12b', label: 'T12b', seats: 4, shape: 'square', position: [1.5, 0, 5.0] },
-  { id: 'SL-13', label: 'T13', seats: 6, shape: 'rect', position: [6.5, 0, 5.0], rotation: 0 },
-  { id: 'SL-14', label: 'T14', seats: 4, shape: 'square', position: [1.5, 0, 8.5] },
-  { id: 'SL-15', label: 'T15', seats: 6, shape: 'rect', position: [6.5, 0, 8.5], rotation: 0 },
+  { id: 'SL-12b', label: 'F-12b', seats: 4, shape: 'square', position: [1.5, 0, 5.0] },
+  { id: 'SL-13', label: 'F-13', seats: 6, shape: 'rect', position: [6.5, 0, 5.0], rotation: 0 },
+  { id: 'SL-14', label: 'F-14', seats: 4, shape: 'square', position: [1.5, 0, 8.5] },
+  { id: 'SL-15', label: 'F-15', seats: 6, shape: 'rect', position: [6.5, 0, 8.5], rotation: 0 },
 
   // ---- ROW 6 (z≈+8.5, near entry) ----
 ];

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/db';
 import { verifyWebhookSignature } from '@/lib/razorpay';
+import { sendBookingConfirmationSmsOnce } from '@/lib/twilio';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -47,6 +48,13 @@ export async function POST(req: NextRequest) {
         RETURNING id`,
       [paymentId || null, orderId],
     );
+    // Backstop confirmation SMS: /verify usually sends, but the webhook may
+    // arrive first (browser closed, verify failed, etc.). Idempotent.
+    if (rows[0]?.id) {
+      sendBookingConfirmationSmsOnce(rows[0].id, pool).catch((e) =>
+        console.error('[rzp webhook] sms error:', e),
+      );
+    }
     if (rows.length === 0 && paymentId) {
       console.warn('[rzp webhook] payment.captured for missing/cancelled booking, refunding', { orderId, paymentId });
       try {

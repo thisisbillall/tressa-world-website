@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/db';
 import { verifyCheckoutSignature } from '@/lib/razorpay';
 import { guardDbConfigured, jsonError } from '@/lib/apiError';
+import { sendBookingConfirmationSmsOnce } from '@/lib/twilio';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -55,6 +56,10 @@ export async function POST(req: NextRequest) {
     if (!rows[0]) {
       return NextResponse.json({ success: false, error: 'Booking not found' }, { status: 404 });
     }
+    // Fire-and-forget confirmation SMS (webhook is the backstop if this fails).
+    sendBookingConfirmationSmsOnce(rows[0].id, pool).catch((e) =>
+      console.error('[rzp verify] sms error:', e),
+    );
     return NextResponse.json({ success: true, data: rows[0] });
   } catch (e) {
     return jsonError(e);

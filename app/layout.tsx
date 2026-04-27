@@ -153,6 +153,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+        {/* Razorpay — warm up the connection so the checkout modal opens
+            instantly after the booking POST returns, instead of waiting on
+            a fresh TLS handshake + 50-100KB download. */}
+        <link rel="preconnect" href="https://checkout.razorpay.com" crossOrigin="" />
+        <link rel="preconnect" href="https://api.razorpay.com" crossOrigin="" />
+        <link rel="dns-prefetch" href="https://checkout.razorpay.com" />
+        <link rel="dns-prefetch" href="https://api.razorpay.com" />
+        <link rel="dns-prefetch" href="https://lumberjack.razorpay.com" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content={SITE.shortName} />

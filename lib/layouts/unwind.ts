@@ -47,29 +47,29 @@ type RawTable = Omit<Table, 'availability'>;
 
 const TABLES: RawTable[] = [
   // ---- ROW 1 (near entry, z≈-9) ----
-  { id: 'UW-01', label: 'U1', seats: 12, shape: 'rect', position: [-7.0, 0, -7.0], rotation: Math.PI / 2 },
-  { id: 'UW-02', label: 'U2', seats: 4, shape: 'square', position: [-3.5, 0, -9.0] },
-  { id: 'UW-03', label: 'U3', seats: 4, shape: 'square', position: [-3.5, 0, 1.5] },
-  { id: 'UW-04', label: 'U4', seats: 6, shape: 'rect', position: [0.0, 0, -9.0], rotation: 0 },
+  { id: 'UW-01', label: 'L-1', seats: 12, shape: 'rect', position: [-7.0, 0, -7.0], rotation: Math.PI / 2 },
+  { id: 'UW-02', label: 'L-2', seats: 4, shape: 'square', position: [-3.5, 0, -9.0] },
+  { id: 'UW-03', label: 'L-3', seats: 4, shape: 'square', position: [-3.5, 0, 1.5] },
+  { id: 'UW-04', label: 'L-4', seats: 6, shape: 'rect', position: [0.0, 0, -9.0], rotation: 0 },
 
   // ---- ROW 2 (z≈-5.5) ----
-  { id: 'UW-05', label: 'U5', seats: 4, shape: 'square', position: [-3.5, 0, -2.0] },
-  { id: 'UW-06', label: 'U6', seats: 8, shape: 'rect', position: [6.5, 0, -3.3], rotation: 0 },
+  { id: 'UW-05', label: 'L-5', seats: 4, shape: 'square', position: [-3.5, 0, -2.0] },
+  { id: 'UW-06', label: 'L-6', seats: 8, shape: 'rect', position: [6.5, 0, -3.3], rotation: 0 },
 
   // ---- LEFT OF BAR (z≈-1.5) ----
-  { id: 'UW-07', label: 'U7', seats: 6, shape: 'rect', position: [-7.0, 0, -2.0], rotation: Math.PI / 2 },
+  { id: 'UW-07', label: 'L-7', seats: 6, shape: 'rect', position: [-7.0, 0, -2.0], rotation: Math.PI / 2 },
 
   // ---- ABOVE BAR (z≈-3.5) ----
 
   // ---- ROW 4 — below bar (z≈+3) ----
-  { id: 'UW-10', label: 'U10', seats: 4, shape: 'square', position: [-3.5, 0, -5.5] },
-  { id: 'UW-11', label: 'U11', seats: 6, shape: 'rect', position: [6.5, 0, 1.5], rotation: 0 },
+  { id: 'UW-10', label: 'L-10', seats: 4, shape: 'square', position: [-3.5, 0, -5.5] },
+  { id: 'UW-11', label: 'L-11', seats: 6, shape: 'rect', position: [6.5, 0, 1.5], rotation: 0 },
 
   // ---- ROW 5 (z≈+6) ----
-  { id: 'UW-12', label: 'U12', seats: 6, shape: 'rect', position: [-7.0, 0, 2.0], rotation: 0 },
+  { id: 'UW-12', label: 'L-12', seats: 6, shape: 'rect', position: [-7.0, 0, 2.0], rotation: 0 },
 
   // ---- ROW 6 — near bottom (z≈+8.5) ----
-  { id: 'UW-13', label: 'U13', seats: 6, shape: 'rect', position: [-7.0, 0, 6.0], rotation: 0 }
+  { id: 'UW-13', label: 'L-13', seats: 6, shape: 'rect', position: [-7.0, 0, 6.0], rotation: 0 }
 ];
 
 /* ============================================================

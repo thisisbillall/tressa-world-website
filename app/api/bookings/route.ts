@@ -2,13 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { pool, queryMany } from '@/lib/db';
 import {
   BookingInput,
+  cleanupStaleBookings,
   findSuite,
+  findTableSeats,
   findVenueCharge,
   nightsBetween,
   validateBooking,
 } from '@/lib/bookings';
 import { isRazorpayConfigured, rzp, RZP_KEY_ID } from '@/lib/razorpay';
 import { guardDbConfigured, jsonError } from '@/lib/apiError';
+import { generateBookingCode } from '@/lib/bookingCode';
+import { sendBookingConfirmationSmsOnce } from '@/lib/twilio';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -17,6 +21,10 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: NextRequest) {
   const dbGuard = guardDbConfigured();
   if (dbGuard) return dbGuard;
+
+  // Sweep abandoned/cancelled rows older than 5 min before listing — keeps
+  // the slot-unique index from holding tables hostage indefinitely.
+  await cleanupStaleBookings(5);
 
   try {
     const { searchParams } = new URL(req.url);
@@ -64,6 +72,11 @@ export async function POST(req: NextRequest) {
   if (err) { mark(`validation failed: ${err}`); return NextResponse.json({ success: false, error: err }, { status: 400 }); }
   mark('validated');
 
+  // Sweep abandoned holds before checking the unique-slot index — otherwise a
+  // 5-min-old "pending unpaid" row would falsely block this booking.
+  const swept = await cleanupStaleBookings(5);
+  if (swept > 0) mark(`cleaned up ${swept} stale bookings`);
+
   try {
     const isSuite = body.venue === 'suite';
     let amount = 0;
@@ -102,6 +115,12 @@ export async function POST(req: NextRequest) {
       mark(`table path perPerson=${perPerson} guests=${guests} amount=${amount}`);
     }
 
+    // guests > table.seats → flagged for the manager; pricing unchanged.
+    // Computed server-side from the layout so the client can't forge the flag.
+    const tableSeats = findTableSeats(body.venue, body.table_ref);
+    const isSpecial = !isSuite && tableSeats != null && Number(body.guests || 0) > tableSeats;
+    if (isSpecial) mark(`special booking: guests=${body.guests} > seats=${tableSeats}`);
+
     // Razorpay must be configured up-front if the booking will require payment,
     // so we fail before reserving a DB slot for a booking we can't complete.
     if (amount > 0 && !isRazorpayConfigured()) {
@@ -118,6 +137,8 @@ export async function POST(req: NextRequest) {
     // Partial unique index (sql/005) makes concurrent double-bookings impossible:
     // whichever transaction commits first wins; others fail with 23505 / 23P01
     // and get a 409, never reaching Razorpay.
+    // Unique booking code generated up-front. Retry loop handles the vanishingly
+    // rare generator collision against the partial unique index.
     const insertSql = `
       INSERT INTO bookings (
         customer_name, customer_phone, customer_email,
@@ -127,6 +148,8 @@ export async function POST(req: NextRequest) {
         suite_name, check_in, check_out, nights,
         notes,
         amount, payment_status, razorpay_order_id,
+        is_special,
+        booking_code,
         status
       ) VALUES (
         $1, $2, $3,
@@ -136,9 +159,12 @@ export async function POST(req: NextRequest) {
         $10, $11, $12, $13,
         $14,
         $15, $16, NULL,
+        $17,
+        $18,
         'pending'
       ) RETURNING *`;
 
+    const bookingCode = generateBookingCode();
     const params = [
       body.customer_name.trim(),
       body.customer_phone.trim(),
@@ -156,6 +182,8 @@ export async function POST(req: NextRequest) {
       body.notes?.trim() || null,
       amount,
       paymentStatus,
+      isSpecial,
+      bookingCode,
     ];
 
     mark('db insert (reserve slot) starting');
@@ -229,6 +257,11 @@ export async function POST(req: NextRequest) {
       mark(`booking updated with razorpay_order_id`);
     } else {
       mark('free booking, skipping razorpay');
+      // Free bookings never hit razorpay/verify, so confirmation-SMS fires now.
+      // Fire-and-forget: we don't want a Twilio hiccup to hold up the response.
+      sendBookingConfirmationSmsOnce(booking.id, pool)
+        .then((r) => mark(`sms free-booking claimed=${r.claimed} sent=${r.sent ?? false}`))
+        .catch((e) => console.error('[bookings POST] sms error:', e));
     }
 
     return NextResponse.json({

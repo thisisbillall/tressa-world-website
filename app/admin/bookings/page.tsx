@@ -21,6 +21,8 @@ type Booking = {
   amount: string | number;
   payment_status: 'not_required' | 'pending' | 'paid' | 'failed' | 'refunded';
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  is_special: boolean;
+  table_ref: string | null;
   created_at: string;
 };
 
@@ -91,6 +93,32 @@ export default function AdminBookingsPage() {
     }
   };
 
+  // ── Test SMS panel state ──
+  const [smsOpen, setSmsOpen] = useState(false);
+  const [smsPhone, setSmsPhone] = useState('');
+  const [smsSample, setSmsSample] = useState<'table' | 'suite'>('table');
+  const [smsPreview, setSmsPreview] = useState('');
+  const [smsBusy, setSmsBusy] = useState(false);
+  const [smsMsg, setSmsMsg] = useState<string | null>(null);
+
+  const runTestSms = async (send: boolean) => {
+    setSmsBusy(true);
+    setSmsMsg(null);
+    try {
+      const json = await apiFetch<any>('/api/admin/test-sms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sample: smsSample, send, phone: smsPhone }),
+      });
+      setSmsPreview(json.preview || '');
+      setSmsMsg(send ? 'Sent! Check the phone.' : 'Preview generated.');
+    } catch (e: any) {
+      setSmsMsg(`Failed: ${e?.message || 'unknown error'}`);
+    } finally {
+      setSmsBusy(false);
+    }
+  };
+
   const visible = filter === 'all' ? bookings : bookings.filter((b) => b.status === filter);
   const counts = bookings.reduce<Record<string, number>>((a, b) => {
     a[b.status] = (a[b.status] || 0) + 1;
@@ -115,6 +143,69 @@ export default function AdminBookingsPage() {
           </span>
         </div>
       </header>
+
+      <div className="mb-6 border border-cream/10">
+        <button
+          type="button"
+          onClick={() => setSmsOpen((v) => !v)}
+          className="w-full text-left px-4 py-3 text-[11px] tracking-[0.3em] uppercase text-cream/70 hover:text-gold flex items-center justify-between"
+        >
+          <span>Test SMS Template</span>
+          <span className="text-cream/40">{smsOpen ? '−' : '+'}</span>
+        </button>
+        {smsOpen ? (
+          <div className="border-t border-cream/10 p-4 grid gap-4 md:grid-cols-2">
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                {(['table', 'suite'] as const).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setSmsSample(s)}
+                    className={`px-3 py-1.5 text-[10px] tracking-[0.25em] uppercase border transition ${
+                      smsSample === s
+                        ? 'border-gold text-gold bg-gold/10'
+                        : 'border-cream/20 text-cream/60 hover:border-cream/40'
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+              <input
+                type="tel"
+                placeholder="10-digit phone (e.g. 9876543210)"
+                value={smsPhone}
+                onChange={(e) => setSmsPhone(e.target.value)}
+                className="w-full bg-transparent border border-cream/20 px-3 py-2 text-sm focus:border-gold outline-none"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => runTestSms(false)}
+                  disabled={smsBusy}
+                  className="px-4 py-2 text-[10px] tracking-[0.25em] uppercase border border-cream/30 text-cream/80 hover:border-cream/60 disabled:opacity-40"
+                >
+                  Preview
+                </button>
+                <button
+                  onClick={() => runTestSms(true)}
+                  disabled={smsBusy || smsPhone.replace(/\D/g, '').length < 10}
+                  className="px-4 py-2 text-[10px] tracking-[0.25em] uppercase border border-gold text-gold bg-gold/10 hover:bg-gold/20 disabled:opacity-40"
+                >
+                  Send Test SMS
+                </button>
+              </div>
+              {smsMsg ? (
+                <p className={`text-xs ${smsMsg.startsWith('Failed') ? 'text-red-300' : 'text-emerald-300'}`}>
+                  {smsMsg}
+                </p>
+              ) : null}
+            </div>
+            <pre className="text-xs whitespace-pre-wrap bg-black/40 border border-cream/10 p-3 text-cream/80 min-h-[10rem]">
+              {smsPreview || 'Click Preview to render the template.'}
+            </pre>
+          </div>
+        ) : null}
+      </div>
 
       <div className="flex gap-2 flex-wrap mb-6">
         {(['all', 'pending', 'confirmed', 'cancelled', 'completed'] as const).map((s) => (
@@ -185,7 +276,13 @@ export default function AdminBookingsPage() {
                       </>
                     ) : (
                       <div className="text-cream/70">
+                        {b.table_ref ? `${b.table_ref} · ` : ''}
                         {b.reservation_date} · {b.reservation_time} · {b.guests} guests
+                      </div>
+                    )}
+                    {b.is_special && (
+                      <div className="mt-1 inline-block px-2 py-0.5 text-[9px] tracking-[0.2em] uppercase border border-gold/50 bg-gold/10 text-gold">
+                        Special · oversized party
                       </div>
                     )}
                     {b.notes && <div className="text-cream/50 italic mt-1">“{b.notes}”</div>}

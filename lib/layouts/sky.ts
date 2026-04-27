@@ -40,32 +40,32 @@ type RawTable = Omit<Table, 'availability'>;
 
 const TABLES: RawTable[] = [
   // -------- Row 1 — top of room, right side near entry --------
-  { id: 'SKY-01', label: 'S1', seats: 4, shape: 'square', position: [7, 2.0, -7.5] },
+  { id: 'SKY-01', label: 'R-1', seats: 4, shape: 'square', position: [7, 2.0, -7.5] },
 
   // -------- Row 2 — first round + right square --------
-  { id: 'SKY-02', label: 'S2', seats: 6, shape: 'round', position: [3.5, 0, -5.5] },
-  { id: 'SKY-03', label: 'S3', seats: 4, shape: 'square', position: [7, 0, -4.0] },
+  { id: 'SKY-02', label: 'R-2', seats: 6, shape: 'round', position: [3.5, 0, -5.5] },
+  { id: 'SKY-03', label: 'R-3', seats: 4, shape: 'square', position: [7, 0, -4.0] },
 
   // -------- Row 3 — upper-left pair (HORIZONTAL rects) + second round + right square --------
-  { id: 'SKY-04', label: 'S4', seats: 6, shape: 'rect', position: [-6.5, 0, 1.0], rotation: Math.PI / 2 }, // 6P horizontal
-  { id: 'SKY-05', label: 'S5', seats: 4, shape: 'square', position: [-3.5, 0, 1.0], rotation: 0 }, // 4P horizontal
+  { id: 'SKY-04', label: 'R-4', seats: 6, shape: 'rect', position: [-6.5, 0, 1.0], rotation: Math.PI / 2 }, // 6P horizontal
+  { id: 'SKY-05', label: 'R-5', seats: 4, shape: 'square', position: [-3.5, 0, 1.0], rotation: 0 }, // 4P horizontal
 
 
-  { id: 'SKY-06', label: 'S6', seats: 6, shape: 'round', position: [3.5, 0, -1.5] },
-  { id: 'SKY-07', label: 'S7', seats: 4, shape: 'square', position: [7, 0, -0.5] },
+  { id: 'SKY-06', label: 'R-6', seats: 6, shape: 'round', position: [3.5, 0, -1.5] },
+  { id: 'SKY-07', label: 'R-7', seats: 4, shape: 'square', position: [7, 0, -0.5] },
 
   // -------- Row 4 — single right-column square --------
-  { id: 'SKY-08', label: 'S8', seats: 4, shape: 'square', position: [7, 0, 2.8] },
+  { id: 'SKY-08', label: 'R-8', seats: 4, shape: 'square', position: [7, 0, 2.8] },
 
   // -------- Row 5 — lower-left pair (VERTICAL rects) + centre horizontal rect --------
-  { id: 'SKY-09', label: 'S9', seats: 6, shape: 'rect', position: [-7.0, 0, 5.5], rotation: Math.PI / 2 }, // 6P vertical
-  { id: 'SKY-10', label: 'S10', seats: 6, shape: 'rect', position: [-3.5, 0, 5.5], rotation: Math.PI / 2 }, // 6P vertical
-  { id: 'SKY-11', label: 'S11', seats: 6, shape: 'rect', position: [3.5, 0, 2.5], rotation: 0 },           // 6P horizontal
+  { id: 'SKY-09', label: 'R-9', seats: 6, shape: 'rect', position: [-7.0, 0, 5.5], rotation: Math.PI / 2 }, // 6P vertical
+  { id: 'SKY-10', label: 'R-10', seats: 6, shape: 'rect', position: [-3.5, 0, 5.5], rotation: Math.PI / 2 }, // 6P vertical
+  { id: 'SKY-11', label: 'R-11', seats: 6, shape: 'rect', position: [3.5, 0, 2.5], rotation: 0 },           // 6P horizontal
 
   // -------- Row 6 — three 4P squares along the bottom --------
-  { id: 'SKY-12', label: 'S12', seats: 4, shape: 'square', position: [-6.0, 0, 9.0] },
-  { id: 'SKY-13', label: 'S13', seats: 4, shape: 'square', position: [-3.0, 0, 9.0] },
-  { id: 'SKY-14', label: 'S14', seats: 4, shape: 'square', position: [1.0, 0, 9.0] }
+  { id: 'SKY-12', label: 'R-12', seats: 4, shape: 'square', position: [-6.0, 0, 9.0] },
+  { id: 'SKY-13', label: 'R-13', seats: 4, shape: 'square', position: [-3.0, 0, 9.0] },
+  { id: 'SKY-14', label: 'R-14', seats: 4, shape: 'square', position: [1.0, 0, 9.0] }
 ];
 
 /* ============================================================

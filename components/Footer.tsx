@@ -29,6 +29,7 @@ export default function Footer() {
             {['About', 'Spaces', 'Menu', 'Suites', 'Booking'].map((l) => (
               <li key={l}><a href={`#${l.toLowerCase()}`} className="hover:text-gold transition-colors">{l}</a></li>
             ))}
+            <li><a href="/terms" className="hover:text-gold transition-colors">Terms &amp; Refund Policy</a></li>
           </ul>
         </div>
 
@@ -53,7 +54,10 @@ export default function Footer() {
 
       <div className="max-w-[1400px] mx-auto pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] sm:text-[11px] tracking-[0.15em] sm:tracking-[0.2em] uppercase text-cream/40 text-center md:text-left">
         <p>© {new Date().getFullYear()} Tressa World. All rights reserved.</p>
-        <p>Crafted with care · Privacy · Terms</p>
+        <p>
+          Crafted with care ·{' '}
+          <a href="/terms" className="hover:text-gold transition-colors">Terms &amp; Refund Policy</a>
+        </p>
       </div>
     </footer>
   );
