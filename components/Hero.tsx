@@ -72,7 +72,8 @@ export default function Hero() {
           transition={{ duration: 1, delay: 3.1 }}
           className="flex flex-col sm:flex-row gap-4 justify-center items-center"
         >
-          <TressaLink href="/booking" className="btn-outline"><span>Reserve A Table</span></TressaLink>
+          {/* Booking CTA hidden — /booking redirection disabled site-wide */}
+          {/* <TressaLink href="/booking" className="btn-outline"><span>Reserve A Table</span></TressaLink> */}
           {/* Aura Suites under development — hide CTA until launch */}
           {/* <TressaLink href="/booking?venue=suites" className="btn-outline"><span>Book A Suite</span></TressaLink> */}
         </motion.div>

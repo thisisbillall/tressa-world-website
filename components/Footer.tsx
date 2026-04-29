@@ -26,7 +26,7 @@ export default function Footer() {
         <div>
           <p className="text-[10px] tracking-[0.3em] uppercase text-gold mb-5">Explore</p>
           <ul className="space-y-3 text-sm">
-            {['About', 'Spaces', 'Menu', 'Suites', 'Booking'].map((l) => (
+            {['About', 'Spaces', 'Menu', 'Suites'].map((l) => (
               <li key={l}><a href={`#${l.toLowerCase()}`} className="hover:text-gold transition-colors">{l}</a></li>
             ))}
             <li><a href="/terms" className="hover:text-gold transition-colors">Terms &amp; Refund Policy</a></li>

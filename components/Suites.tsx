@@ -59,7 +59,8 @@ export default function Suites() {
                   <p className="text-[10px] tracking-[0.3em] uppercase text-cream/50">From</p>
                   <p className="text-2xl font-serif text-gold mt-1">{s.rate}<span className="text-xs text-cream/60"> / night</span></p>
                 </div>
-                <TressaLink href="/booking?venue=suites" className="text-[10px] tracking-[0.3em] uppercase text-gold border-b border-gold pb-1 hover:text-cream hover:border-cream transition-colors">Book</TressaLink>
+                {/* Booking CTA hidden — /booking redirection disabled site-wide */}
+                {/* <TressaLink href="/booking?venue=suites" className="text-[10px] tracking-[0.3em] uppercase text-gold border-b border-gold pb-1 hover:text-cream hover:border-cream transition-colors">Book</TressaLink> */}
               </div>
             </div>
           </motion.article>

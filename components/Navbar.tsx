@@ -119,7 +119,8 @@ export default function Navbar() {
         </ul>
 
         <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
-          <TressaLink
+          {/* Booking CTA hidden — /booking redirection disabled site-wide */}
+          {/* <TressaLink
             href="/booking"
             className={`hidden md:inline-block px-6 py-3 text-[11px] tracking-[0.25em] uppercase border transition-all duration-500 relative overflow-hidden group ${
               scrolled ? 'border-maroon text-maroon' : 'border-cream text-cream'
@@ -127,7 +128,7 @@ export default function Navbar() {
           >
             <span className="absolute inset-0 bg-gold translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.77,0,0.175,1)]" />
             <span className="relative group-hover:text-maroon transition-colors duration-300">Book Now</span>
-          </TressaLink>
+          </TressaLink> */}
 
           <button
             onClick={() => setOpen(!open)}
@@ -158,7 +159,8 @@ export default function Navbar() {
                 </a>
               </li>
             ))}
-            <TressaLink href="/booking" onClick={() => setOpen(false)} className="btn-primary inline-block text-center"><span>Book Now</span></TressaLink>
+            {/* Mobile booking CTA hidden — /booking redirection disabled site-wide */}
+            {/* <TressaLink href="/booking" onClick={() => setOpen(false)} className="btn-primary inline-block text-center"><span>Book Now</span></TressaLink> */}
           </ul>
         </motion.div>
       )}

@@ -214,7 +214,7 @@ export default function RooftopNight() {
         </motion.div>
 
         {/* CTA */}
-        <motion.div
+        {/* <motion.div
           variants={fadeUp}
           initial="hidden"
           whileInView="show"
@@ -234,7 +234,7 @@ export default function RooftopNight() {
           <p className="mt-5 font-serif italic text-[10px] sm:text-[11px] tracking-[0.25em] sm:tracking-[0.35em] uppercase text-cream/40 break-words">
             The Sky · Lounge · Family Resto · Suites
           </p>
-        </motion.div>
+        </motion.div> */}
       </div>
 
       <div aria-hidden className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#10060a] to-transparent pointer-events-none" />
