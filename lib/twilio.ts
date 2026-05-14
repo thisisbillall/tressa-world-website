@@ -234,7 +234,7 @@ export function buildBookingSmsBody(b: BookingSmsInput): string {
 
   const amt = formatINR(b.amount);
   if (amt) {
-    lines.push(isSuite ? `Prepaid: ${amt}` : `Reservation: ${amt} (redeemed on bill)`);
+    lines.push(isSuite ? `Prepaid: ${amt}` : `Reservation: ${amt} (redeemed on total booking)`);
   }
 
   lines.push('');

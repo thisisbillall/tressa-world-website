@@ -13,12 +13,12 @@ import {
 export const metadata: Metadata = {
   title: 'Terms & Conditions',
   description:
-    'Priority Booking terms for TRESSA World — ₹99 reservation (redeemable on total bill), 15% Tressa Pay discount on Exclusive slots, QR + booking code validity, and refund policy.',
+    'Priority Booking terms for TRESSA World — ₹99 reservation (redeemable on total booking), 15% Tressa Pay discount on Exclusive slots, QR + booking code validity, and refund policy.',
   alternates: { canonical: `${SITE.url}/terms` },
   robots: { index: true, follow: true },
 };
 
-const LAST_UPDATED = '13 May 2026';
+const LAST_UPDATED = '14 May 2026';
 
 const PRIORITY_WINDOW_TEXT = PRIORITY_WINDOWS.map((w) => w.label).join(' and ');
 
@@ -56,17 +56,21 @@ export default function TermsPage() {
             </p>
           </Section>
 
-          <Section title="2. ₹99 reservation fee — non-refundable">
+          <Section title="2. ₹99 reservation fee — redeemed on your total booking">
             <p>
-              The ₹{BOOKING_FEE_INR} reservation fee is{' '}
-              <strong>strictly non-refundable</strong> once a payment is captured
-              successfully via Razorpay. This applies regardless of whether the
-              booking falls inside a priority window, whether you arrive at the
-              venue, or whether you ultimately use the {BOOKING_DISCOUNT_PERCENT}%
-              discount.
+              When you arrive at the venue and use your slot, the full{' '}
+              <strong>₹{BOOKING_FEE_INR} reservation fee is redeemed against your
+              total booking</strong> at billing — so you pay nothing extra to
+              reserve. If you don&apos;t use the slot, the ₹{BOOKING_FEE_INR} is{' '}
+              <strong>strictly non-refundable</strong> once payment is captured
+              successfully via Razorpay. This non-refundable rule applies
+              regardless of whether the booking falls inside a priority window,
+              whether you arrive at the venue, or whether you ultimately use the{' '}
+              {BOOKING_DISCOUNT_PERCENT}% discount.
             </p>
             <List
               items={[
+                `On a used booking, ₹${BOOKING_FEE_INR} is automatically adjusted against your total booking at the venue via Tressa Pay.`,
                 'No partial refunds for changes in party size, time, date, or venue.',
                 'No refunds for no-shows or late arrivals past the QR / code expiry.',
                 `No refunds if the customer chooses a time outside the priority windows (${PRIORITY_WINDOW_TEXT}) — the reservation is still held; only the ${BOOKING_DISCOUNT_PERCENT}% discount does not apply.`,
@@ -88,7 +92,7 @@ export default function TermsPage() {
             </p>
             <List
               items={[
-                `Exclusive windows: <strong>${PRIORITY_WINDOW_TEXT}</strong>. Endpoints are inclusive — a 7:00 PM booking qualifies; a 7:30 PM booking does not.`,
+                `Exclusive windows: <strong>${PRIORITY_WINDOW_TEXT}</strong>. Endpoints are inclusive — a 7:00 PM booking qualifies; a 7:15 PM booking does not.`,
                 'Discount applies to food &amp; beverage (F&B) consumed during the same visit only. It does not apply to room tariffs, government taxes, gratuity, service charge, MRP-bound items, or any third-party charges.',
                 'Discount is only honored when the bill is settled via <strong>Tressa Pay</strong>. Bills settled via cash, card, UPI, netbanking, or any other method are not eligible.',
                 'Bookings outside the priority windows do not qualify for the discount even though the ₹99 reservation fee still applies.',
@@ -208,12 +212,7 @@ export default function TermsPage() {
                   {SITE.business.email}
                 </a>
               </li>
-              <li>
-                Reservations:{' '}
-                <a href={`mailto:${SITE.business.reservationsEmail ?? ''}`} className="text-gold underline">
-                  {SITE.business.reservationsEmail}
-                </a>
-              </li>
+              
               <li>
                 Phone:{' '}
                 <a href={`tel:${(SITE.business.phone ?? '').replace(/\s/g, '')}`} className="text-gold underline">

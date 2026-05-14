@@ -296,7 +296,7 @@ export default function BookingClient() {
 
             <div className="mt-5 flex flex-wrap gap-2 md:gap-3 max-w-md">
               <Badge dark icon={<BadgePercent size={14} />} title={`${BOOKING_DISCOUNT_PERCENT}% OFF total bill`} />
-              <Badge dark icon={<ShieldCheck size={14} />} title={`₹${BOOKING_FEE_INR} redeemed on bill`} />
+              <Badge dark icon={<ShieldCheck size={14} />} title={`₹${BOOKING_FEE_INR} redeemed on total booking`} />
             </div>
           </div>
         </motion.aside>
@@ -314,7 +314,7 @@ export default function BookingClient() {
                 {BOOKING_DISCOUNT_PERCENT}% off applies only for bookings in {PRIORITY_WINDOWS.map((w) => w.label).join(' or ')}.
               </span>
               <span className="block mt-1 text-[11px] text-maroon">
-                Your ₹{BOOKING_FEE_INR} booking amount is redeemed against your total bill at the venue.
+                Your ₹{BOOKING_FEE_INR} booking amount is redeemed against your total booking at the venue.
               </span>
             </p>
 
@@ -523,7 +523,7 @@ export default function BookingClient() {
                       <a href="/terms" target="_blank" rel="noopener" className="text-maroon underline hover:text-gold">
                         Terms &amp; Refund Policy
                       </a>{' '}
-                      and acknowledge the ₹{BOOKING_FEE_INR} booking amount is redeemed on the total bill at the venue, and is non-refundable if the slot is not used.
+                      and acknowledge the ₹{BOOKING_FEE_INR} booking amount is redeemed on the total booking at the venue, and is non-refundable if the slot is not used.
                     </span>
                   </label>
 
