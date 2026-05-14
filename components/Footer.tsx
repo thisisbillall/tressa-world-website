@@ -4,18 +4,18 @@ import { useSiteContent } from '@/lib/siteContent';
 
 export default function Footer() {
   const [content] = useSiteContent();
-  const { contact, footerHours } = content;
+  const { contact } = content;
 
   return (
     <footer id="contact" className="bg-ink text-cream/80 pt-16 md:pt-20 pb-8 px-5 sm:px-6 md:px-[8%] overflow-hidden">
-      <div className="max-w-[1400px] mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-10 pb-12 border-b border-cream/10">
+      <div className="max-w-[1400px] mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 md:gap-10 pb-12 border-b border-cream/10">
         <div>
           <p className="font-serif tracking-[0.4em] text-gold text-xl">TRESSA</p>
           <p className="mt-5 text-sm leading-relaxed text-cream/60">
             A world of rooftop, restaurant, bar and suites — crafted for those who notice the details.
           </p>
           <div className="flex gap-4 mt-6">
-            {[{ Icon: Instagram, url: contact.instagram }, { Icon: Facebook, url: contact.facebook }, { Icon: Twitter, url: contact.twitter }].map(({ Icon, url }, i) => (
+            {[{ Icon: Instagram, url: contact.instagram }].map(({ Icon, url }, i) => (
               <a key={i} href={url} target="_blank" rel="noopener" aria-label="Social" className="w-9 h-9 border border-cream/20 flex items-center justify-center hover:bg-gold hover:text-maroon hover:border-gold transition-all">
                 <Icon size={14} />
               </a>
@@ -29,16 +29,8 @@ export default function Footer() {
             {['About', 'Spaces', 'Menu', 'Suites'].map((l) => (
               <li key={l}><a href={`#${l.toLowerCase()}`} className="hover:text-gold transition-colors">{l}</a></li>
             ))}
+            <li><a href="/booking" className="hover:text-gold transition-colors">Priority Booking</a></li>
             <li><a href="/terms" className="hover:text-gold transition-colors">Terms &amp; Refund Policy</a></li>
-          </ul>
-        </div>
-
-        <div>
-          <p className="text-[10px] tracking-[0.3em] uppercase text-gold mb-5">Hours</p>
-          <ul className="space-y-3 text-sm text-cream/70">
-            {footerHours.map((h) => (
-              <li key={h.id}>{h.label} · {h.value}</li>
-            ))}
           </ul>
         </div>
 

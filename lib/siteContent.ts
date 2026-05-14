@@ -50,8 +50,7 @@ export type Contact = {
   address: string;
   city: string;
   instagram: string;
-  facebook: string;
-  twitter: string;
+  
 };
 
 export type MenuItem = { id: string; name: string; desc: string; price: string; img?: string };
@@ -216,11 +215,9 @@ export const DEFAULT_CONTENT: SiteContent = {
   contact: {
     phone: '+91 8600627270',
     email: 'operationstressa@gmail.com',
-    address: 'Tressa World Lane',
+    address: 'Tressa Restaurant and Suites, Jarvari Rd, Pimple Saudagar, Pimpri-Chinchwad, Maharashtra 411027',
     city: 'Pune, India',
-    instagram: 'https://instagram.com/tressaworld',
-    facebook: 'https://facebook.com/tressaworld',
-    twitter: 'https://twitter.com/tressaworld'
+    instagram: 'https://www.instagram.com/popular/tressa-restaurant/'
   },
   seoTitle: 'TRESSA World — Rooftop Lounge, Family Restaurant, Bar & Luxury Suites',
   seoDescription:
