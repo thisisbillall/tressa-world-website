@@ -144,7 +144,7 @@ export default async function BookingQrPage({ params }: { params: { code: string
                 Show this QR / code at the venue and get{' '}
                 <strong>{BOOKING_DISCOUNT_PERCENT}% OFF</strong> on the total bill via
                 Tressa Pay — better than Zomato or Swiggy. Your ₹{amount.toLocaleString('en-IN')} booking
-                amount is redeemed against your total booking at the venue.
+                amount is redeemed against your total billing at the venue.
               </p>
             </div>
           )}
@@ -157,7 +157,7 @@ export default async function BookingQrPage({ params }: { params: { code: string
               <p className="mt-1.5 text-[12px] text-ink leading-relaxed">
                 Your slot is held at the venue. The {BOOKING_DISCOUNT_PERCENT}% bill discount applies only for
                 Exclusive slots in {PRIORITY_WINDOWS.map((w) => w.label).join(' or ')}. Your
-                ₹{amount.toLocaleString('en-IN')} booking amount is redeemed against your total booking at the venue.
+                ₹{amount.toLocaleString('en-IN')} booking amount is redeemed against your total billing at the venue.
               </p>
             </div>
           )}

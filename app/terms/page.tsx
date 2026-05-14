@@ -60,7 +60,7 @@ export default function TermsPage() {
             <p>
               When you arrive at the venue and use your slot, the full{' '}
               <strong>₹{BOOKING_FEE_INR} reservation fee is redeemed against your
-              total booking</strong> at billing — so you pay nothing extra to
+                total booking</strong> at billing — so you pay nothing extra to
               reserve. If you don&apos;t use the slot, the ₹{BOOKING_FEE_INR} is{' '}
               <strong>strictly non-refundable</strong> once payment is captured
               successfully via Razorpay. This non-refundable rule applies
@@ -70,7 +70,7 @@ export default function TermsPage() {
             </p>
             <List
               items={[
-                `On a used booking, ₹${BOOKING_FEE_INR} is automatically adjusted against your total booking at the venue via Tressa Pay.`,
+                `On a used booking, ₹${BOOKING_FEE_INR} is automatically adjusted against your total billing at the venue via Tressa Pay.`,
                 'No partial refunds for changes in party size, time, date, or venue.',
                 'No refunds for no-shows or late arrivals past the QR / code expiry.',
                 `No refunds if the customer chooses a time outside the priority windows (${PRIORITY_WINDOW_TEXT}) — the reservation is still held; only the ${BOOKING_DISCOUNT_PERCENT}% discount does not apply.`,
@@ -212,7 +212,7 @@ export default function TermsPage() {
                   {SITE.business.email}
                 </a>
               </li>
-              
+
               <li>
                 Phone:{' '}
                 <a href={`tel:${(SITE.business.phone ?? '').replace(/\s/g, '')}`} className="text-gold underline">

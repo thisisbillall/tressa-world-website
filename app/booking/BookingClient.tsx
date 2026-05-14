@@ -28,37 +28,37 @@ const VENUES: {
   disabled?: boolean;
   disabledReason?: string;
 }[] = [
-  {
-    id: 'restaurant',
-    apiVenue: 'restaurant',
-    label: 'Soul',
-    tag: 'Family Restaurant',
-    hero: { src: soul[0]?.src ?? '/Soul/DSC08024.JPG', alt: soul[0]?.alt ?? 'TRESSA Soul' },
-  },
-  {
-    id: 'rooftop',
-    apiVenue: 'rooftop',
-    label: 'Sky',
-    tag: 'Rooftop Lounge',
-    hero: { src: sky[0]?.src ?? '/Sky/DSC08185.JPG', alt: sky[0]?.alt ?? 'TRESSA Sky' },
-  },
-  {
-    id: 'bar',
-    apiVenue: 'bar',
-    label: 'Unwind',
-    tag: 'Signature Bar',
-    hero: { src: unwind[0]?.src ?? '/Unwind/DSC09753.JPG', alt: unwind[0]?.alt ?? 'TRESSA Unwind' },
-  },
-  {
-    id: 'suites',
-    apiVenue: 'suite',
-    label: 'Aura',
-    tag: 'Luxury Suites · Coming Soon',
-    hero: { src: '/Sky/DSC08230.JPG', alt: 'TRESSA Aura — Luxury Suites' },
-    disabled: true,
-    disabledReason: 'Aura suite booking opens soon. Stay tuned.',
-  },
-];
+    {
+      id: 'restaurant',
+      apiVenue: 'restaurant',
+      label: 'Soul',
+      tag: 'Family Restaurant',
+      hero: { src: soul[0]?.src ?? '/Soul/DSC08024.JPG', alt: soul[0]?.alt ?? 'TRESSA Soul' },
+    },
+    {
+      id: 'rooftop',
+      apiVenue: 'rooftop',
+      label: 'Sky',
+      tag: 'Rooftop Lounge',
+      hero: { src: sky[0]?.src ?? '/Sky/DSC08185.JPG', alt: sky[0]?.alt ?? 'TRESSA Sky' },
+    },
+    {
+      id: 'bar',
+      apiVenue: 'bar',
+      label: 'Unwind',
+      tag: 'Signature Bar',
+      hero: { src: unwind[0]?.src ?? '/Unwind/DSC09753.JPG', alt: unwind[0]?.alt ?? 'TRESSA Unwind' },
+    },
+    {
+      id: 'suites',
+      apiVenue: 'suite',
+      label: 'Aura',
+      tag: 'Luxury Suites · Coming Soon',
+      hero: { src: '/Sky/DSC08230.JPG', alt: 'TRESSA Aura — Luxury Suites' },
+      disabled: true,
+      disabledReason: 'Aura suite booking opens soon. Stay tuned.',
+    },
+  ];
 
 declare global {
   interface Window { Razorpay: any }
@@ -208,7 +208,7 @@ export default function BookingClient() {
         fetch(`/api/bookings/${booking.id}?order_id=${encodeURIComponent(rzpCfg.order_id)}`, {
           method: 'DELETE',
           keepalive: true,
-        }).catch(() => {});
+        }).catch(() => { });
       };
 
       const rz = new window.Razorpay({
@@ -314,7 +314,7 @@ export default function BookingClient() {
                 {BOOKING_DISCOUNT_PERCENT}% off applies only for bookings in {PRIORITY_WINDOWS.map((w) => w.label).join(' or ')}.
               </span>
               <span className="block mt-1 text-[11px] text-maroon">
-                Your ₹{BOOKING_FEE_INR} booking amount is redeemed against your total booking at the venue.
+                Your ₹{BOOKING_FEE_INR} booking amount is redeemed against your total billing at the venue.
               </span>
             </p>
 
@@ -325,13 +325,12 @@ export default function BookingClient() {
                   onClick={() => selectVenue(v.id)}
                   disabled={v.disabled}
                   title={v.disabled ? v.disabledReason : undefined}
-                  className={`px-3 py-2 text-[10px] md:text-[11px] tracking-[0.25em] uppercase border transition-all ${
-                    v.disabled
+                  className={`px-3 py-2 text-[10px] md:text-[11px] tracking-[0.25em] uppercase border transition-all ${v.disabled
                       ? 'bg-white/40 border-maroon/10 text-muted/60 cursor-not-allowed italic'
                       : venueId === v.id
                         ? 'bg-maroon text-cream border-maroon'
                         : 'bg-white border-maroon/20 text-maroon hover:border-gold hover:text-gold'
-                  }`}
+                    }`}
                 >
                   {v.label}
                   {v.disabled && <span className="ml-2 text-[8px] opacity-70">soon</span>}
@@ -455,22 +454,20 @@ export default function BookingClient() {
                       <button
                         type="button"
                         onClick={() => switchSlotType('exclusive')}
-                        className={`px-3 py-2.5 text-[10px] tracking-[0.25em] uppercase border transition-all ${
-                          slotType === 'exclusive'
+                        className={`px-3 py-2.5 text-[10px] tracking-[0.25em] uppercase border transition-all ${slotType === 'exclusive'
                             ? 'bg-maroon text-cream border-maroon'
                             : 'bg-white border-maroon/20 text-maroon hover:border-gold hover:text-gold'
-                        }`}
+                          }`}
                       >
                         Exclusive · {BOOKING_DISCOUNT_PERCENT}% OFF
                       </button>
                       <button
                         type="button"
                         onClick={() => switchSlotType('premium')}
-                        className={`px-3 py-2.5 text-[10px] tracking-[0.25em] uppercase border transition-all ${
-                          slotType === 'premium'
+                        className={`px-3 py-2.5 text-[10px] tracking-[0.25em] uppercase border transition-all ${slotType === 'premium'
                             ? 'bg-maroon text-cream border-maroon'
                             : 'bg-white border-maroon/20 text-maroon hover:border-gold hover:text-gold'
-                        }`}
+                          }`}
                       >
                         Premium
                       </button>
@@ -485,11 +482,10 @@ export default function BookingClient() {
                   </div>
 
                   <div
-                    className={`px-3 py-2 text-[11px] border ${
-                      priority
+                    className={`px-3 py-2 text-[11px] border ${priority
                         ? 'bg-gold/10 border-gold/40 text-maroon'
                         : 'bg-cream/40 border-maroon/15 text-muted'
-                    }`}
+                      }`}
                   >
                     {priority ? (
                       <>
@@ -523,7 +519,7 @@ export default function BookingClient() {
                       <a href="/terms" target="_blank" rel="noopener" className="text-maroon underline hover:text-gold">
                         Terms &amp; Refund Policy
                       </a>{' '}
-                      and acknowledge the ₹{BOOKING_FEE_INR} booking amount is redeemed on the total booking at the venue, and is non-refundable if the slot is not used.
+                      and acknowledge the ₹{BOOKING_FEE_INR} booking amount is redeemed on the total billing at the venue, and is non-refundable if the slot is not used.
                     </span>
                   </label>
 
@@ -630,11 +626,10 @@ function TimeDropdown({
                 role="option"
                 aria-selected={active}
                 onClick={() => { onChange(t.value); setOpen(false); }}
-                className={`px-3 py-2 text-[13px] cursor-pointer transition-colors ${
-                  active
+                className={`px-3 py-2 text-[13px] cursor-pointer transition-colors ${active
                     ? 'bg-maroon text-cream'
                     : 'text-ink hover:bg-cream/60'
-                }`}
+                  }`}
               >
                 {t.label}
               </li>
@@ -649,11 +644,10 @@ function TimeDropdown({
 function Badge({ icon, title, dark }: { icon: React.ReactNode; title: string; dark?: boolean }) {
   return (
     <div
-      className={`flex items-center gap-2 px-3 py-2 border text-[10px] tracking-[0.15em] uppercase ${
-        dark
+      className={`flex items-center gap-2 px-3 py-2 border text-[10px] tracking-[0.15em] uppercase ${dark
           ? 'border-gold/60 bg-black/30 text-cream backdrop-blur-sm'
           : 'border-gold/40 bg-gold/5 text-maroon'
-      }`}
+        }`}
     >
       <span className="text-gold">{icon}</span>
       <span className="truncate">{title}</span>
