@@ -3,16 +3,24 @@ import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { SITE } from '@/lib/seo';
+import {
+  BOOKING_CODE_GRACE_MIN,
+  BOOKING_DISCOUNT_PERCENT,
+  BOOKING_FEE_INR,
+  PRIORITY_WINDOWS,
+} from '@/lib/venueConfig';
 
 export const metadata: Metadata = {
   title: 'Terms & Conditions',
   description:
-    'Booking, payment, refund, and cancellation policies for TRESSA World — rooftop, restaurant, bar and luxury suites in Pune.',
+    'Priority Booking terms for TRESSA World — ₹99 reservation (redeemable on total bill), 15% Tressa Pay discount on Exclusive slots, QR + booking code validity, and refund policy.',
   alternates: { canonical: `${SITE.url}/terms` },
   robots: { index: true, follow: true },
 };
 
-const LAST_UPDATED = '27 April 2026';
+const LAST_UPDATED = '13 May 2026';
+
+const PRIORITY_WINDOW_TEXT = PRIORITY_WINDOWS.map((w) => w.label).join(' and ');
 
 export default function TermsPage() {
   return (
@@ -28,142 +36,182 @@ export default function TermsPage() {
             Last updated · {LAST_UPDATED}
           </p>
 
-          <Section title="1. Bookings">
+          <Section title="1. TRESSA Priority Booking — What you're paying for">
             <p>
-              All reservations made through TRESSA World are subject to availability
-              and confirmation. A booking is considered confirmed only after you
-              receive a confirmation SMS containing a redeem code (e.g. <code>TR-XXXXXX</code>).
-              Walk-in seating is honoured separately and is not covered by these terms.
+              The booking flow at <code>tressaworld.com/booking</code> is a{' '}
+              <strong>Priority Booking</strong> service. By paying the flat{' '}
+              <strong>₹{BOOKING_FEE_INR} reservation fee</strong> you receive:
             </p>
             <List
               items={[
-                'Restaurant, Bar and Rooftop table reservations are free to make and held until 30 minutes after the slot start time.',
-                'Suite (room) bookings require full prepayment via Razorpay at the time of booking.',
-                'You must present the redeem code on arrival to claim the discount and to confirm identity.',
+                'A held Exclusive or Premium slot at the selected TRESSA venue (Soul · Restaurant, Sky · Rooftop, or Unwind · Bar) for the date and 15-minute time you chose.',
+                'A unique booking code (e.g. <code>TW-XXXXXX</code>) plus a QR image, delivered via SMS, the on-screen confirmation, and a downloadable PDF slip.',
+                `When the booked time falls inside a priority window (${PRIORITY_WINDOW_TEXT}), a <strong>${BOOKING_DISCOUNT_PERCENT}% discount on the total bill</strong> — applied at billing via Tressa Pay only.`,
+              ]}
+            />
+            <p>
+              Walk-in seating is honoured separately and is not covered by these
+              terms. Aura · Luxury Suites are currently not bookable through this
+              flow.
+            </p>
+          </Section>
+
+          <Section title="2. ₹99 reservation fee — non-refundable">
+            <p>
+              The ₹{BOOKING_FEE_INR} reservation fee is{' '}
+              <strong>strictly non-refundable</strong> once a payment is captured
+              successfully via Razorpay. This applies regardless of whether the
+              booking falls inside a priority window, whether you arrive at the
+              venue, or whether you ultimately use the {BOOKING_DISCOUNT_PERCENT}%
+              discount.
+            </p>
+            <List
+              items={[
+                'No partial refunds for changes in party size, time, date, or venue.',
+                'No refunds for no-shows or late arrivals past the QR / code expiry.',
+                `No refunds if the customer chooses a time outside the priority windows (${PRIORITY_WINDOW_TEXT}) — the reservation is still held; only the ${BOOKING_DISCOUNT_PERCENT}% discount does not apply.`,
+                'Failed or unverified payments do not create a booking and never charge the customer; abandoned pending bookings are released automatically after 5 minutes.',
+              ]}
+            />
+            <p>
+              Exceptions — described in section 5 — apply only when TRESSA cancels
+              the slot.
+            </p>
+          </Section>
+
+          <Section title={`3. ${BOOKING_DISCOUNT_PERCENT}% Tressa Pay discount`}>
+            <p>
+              When the booked time falls inside a priority window, the booking
+              unlocks <strong>{BOOKING_DISCOUNT_PERCENT}% OFF</strong> the eligible
+              portion of the bill. This is settled at the venue, at billing time,
+              via Tressa Pay only.
+            </p>
+            <List
+              items={[
+                `Exclusive windows: <strong>${PRIORITY_WINDOW_TEXT}</strong>. Endpoints are inclusive — a 7:00 PM booking qualifies; a 7:30 PM booking does not.`,
+                'Discount applies to food &amp; beverage (F&B) consumed during the same visit only. It does not apply to room tariffs, government taxes, gratuity, service charge, MRP-bound items, or any third-party charges.',
+                'Discount is only honored when the bill is settled via <strong>Tressa Pay</strong>. Bills settled via cash, card, UPI, netbanking, or any other method are not eligible.',
+                'Bookings outside the priority windows do not qualify for the discount even though the ₹99 reservation fee still applies.',
+                'The booking code is single-use, tied to one billing session, non-transferable, cannot be split across bills, exchanged for cash, or combined with any other promotional offer, loyalty program, or third-party promotion (Zomato Gold, Swiggy One, DineOut, EazyDiner, etc.).',
+                'Cancelled, expired, or unpaid bookings invalidate the code immediately.',
               ]}
             />
           </Section>
 
-          <Section title="2. Discounts &amp; Redeem Code">
+          <Section title="4. QR &amp; booking-code validity">
             <p>
-              Each confirmed booking generates a one-time redeem code. The code unlocks
-              a discount of <strong>up to 15% OFF</strong> on the total bill, applied at the time
-              of billing in the venue.
+              Each booking code and QR expires{' '}
+              <strong>{BOOKING_CODE_GRACE_MIN} minutes after the booked time</strong>.
+              For example, a 3:00 PM booking is valid until 3:15 PM IST.
             </p>
             <List
               items={[
-                'Up to 15% OFF — when the bill is settled via Tressa Pay AND the guest leaves a Google review at the table.',
-                '12% OFF — when the bill is settled via Tressa Pay without a Google review.',
-                '0% — bills paid via cash, card, or any payment method other than Tressa Pay are not eligible for the discount.',
-                'The discount applies to food &amp; beverage (F&B) only. It does not apply to room tariffs, government taxes, gratuity, or third-party charges.',
-                'The redeem code is single-use and tied to one billing session. It cannot be split across multiple bills, transferred, exchanged for cash, or combined with other promotional offers.',
-                'Cancelled or expired bookings invalidate the code immediately.',
+                `Guests must arrive and present the QR (digitally or from the PDF slip) before expiry. The exact expiry timestamp is shown on the confirmation screen, the SMS, and the PDF slip.`,
+                'Once expired, the slot is released, the discount is forfeited, and the ₹99 reservation fee is not refunded.',
+                'Tampered, forged, screen-captured-from-another-customer, or expired codes will be rejected by venue staff.',
+                'Codes are venue-bound: a code issued for Soul cannot be redeemed at Sky or Unwind, and vice versa.',
               ]}
             />
           </Section>
 
-          <Section title="3. Payments">
+          <Section title="5. When TRESSA cancels — full refund">
             <p>
-              Online payments are processed by Razorpay. By paying online you agree to
-              Razorpay&apos;s terms and authorise TRESSA World to capture, refund, and
-              store transaction references against your booking.
+              If TRESSA closes the venue, cancels the slot, or otherwise prevents
+              you from using a paid booking through no fault of yours, the full
+              ₹{BOOKING_FEE_INR} reservation fee is refunded to the original
+              payment method via Razorpay. Examples:
+            </p>
+            <List
+              items={[
+                'Severe weather closure or government-mandated shutdown.',
+                'Unplanned operational closure (kitchen / facility incident, staff emergency, etc.).',
+                'Overbooking on our part where we cannot accommodate the guest within a reasonable wait time.',
+              ]}
+            />
+            <p>
+              Refunds, where applicable, are routed back to the same card / UPI /
+              netbanking account used to pay. Razorpay typically credits the
+              amount within <strong>5–7 working days</strong>; some banks may take
+              longer. For disputes, share the Razorpay reference when contacting
+              us.
+            </p>
+          </Section>
+
+          <Section title="6. Payments &amp; Razorpay">
+            <p>
+              Online payments are processed by Razorpay. By paying online you
+              agree to Razorpay&apos;s terms and authorise TRESSA World to
+              capture, refund, and store transaction references against your
+              booking.
             </p>
             <List
               items={[
                 'All amounts shown on the booking page are in Indian Rupees (INR) and are inclusive of applicable taxes unless stated otherwise.',
-                'Suite bookings: the prepaid amount represents the room tariff for the selected stay. F&B consumed during your stay is billed separately at checkout.',
-                'Failed or unverified payments result in the booking being marked as pending and released after 5 minutes.',
+                'The PDF slip and the booking record include both the Razorpay <code>order_id</code> and <code>payment_id</code> for reconciliation and refund disputes.',
+                'Bookings whose payment is not verified within the checkout window are marked pending and automatically released after 5 minutes — no charge is captured against the customer in that case.',
               ]}
             />
           </Section>
 
-          <Section title="4. Cancellations &amp; Refunds">
+          <Section title="7. Conduct &amp; Right of Admission">
             <p>
-              You may request a cancellation by contacting us at{' '}
-              <a href={`mailto:${SITE.business.email ?? ''}`} className="text-gold underline">
-                {SITE.business.email}
-              </a>{' '}
-              or{' '}
-              <a href={`tel:${(SITE.business.phone ?? '').replace(/\s/g, '')}`} className="text-gold underline">
-                {SITE.business.phone}
-              </a>
-              . Refunds, where applicable, are processed only against the original
-              payment method via Razorpay and typically reflect in your account within{' '}
-              <strong>5–7 working days</strong>.
+              TRESSA World reserves the right of admission. Guests who are
+              visibly intoxicated, disruptive, or in violation of venue rules may
+              be asked to leave without a refund. Smoking is permitted only in
+              designated areas. Pets are not allowed inside indoor dining areas.
+              Holding a paid booking does not override the right of admission.
             </p>
+          </Section>
 
-            <h3 className="font-serif text-xl text-cream mt-6 mb-3">4.1 Table reservations (Restaurant / Bar)</h3>
+          <Section title="8. Data, SMS &amp; PDF slip">
             <p>
-              Restaurant and Bar reservations are free of charge. You may cancel any
-              time. Failure to arrive within 30 minutes of the slot start may result
-              in the table being released to walk-in guests.
+              On confirmation, we send an SMS to the phone number you provided
+              containing the booking code, QR-page link, and a PDF-slip link.
+              The PDF slip is hosted on a CDN and may remain accessible at its
+              URL after expiry for your records.
             </p>
-
-            <h3 className="font-serif text-xl text-cream mt-6 mb-3">4.2 Rooftop (Sky)</h3>
-            <p>
-              Rooftop reservations carry a per-cover charge that is{' '}
-              <strong>non-refundable</strong> once the booking is confirmed. This applies
-              to both no-shows and customer-initiated cancellations. We reserve the right
-              to relocate or cancel a rooftop reservation in the event of severe weather;
-              in such cases a full refund will be initiated.
-            </p>
-
-            <h3 className="font-serif text-xl text-cream mt-6 mb-3">4.3 Suites (rooms)</h3>
             <List
               items={[
-                'Cancellations made 48+ hours before check-in: full refund.',
-                'Cancellations made within 48 hours of check-in: one night&apos;s tariff is retained; the balance is refunded.',
-                'No-show: the full prepaid amount is forfeited.',
-                'Early checkout: nights already consumed are billable; unused nights may be refunded at the manager&apos;s discretion.',
-                'If the final settled bill is below the prepaid amount, the difference is automatically queued as a Razorpay refund and processed by the manager.',
+                'Provide an accurate phone number — the SMS is the primary delivery channel for the QR / code.',
+                'TRESSA does not share the customer&apos;s contact details with third parties for marketing without consent.',
+                'Razorpay, Twilio, and Vercel Blob are processors for payment, SMS, and PDF storage respectively.',
               ]}
             />
+          </Section>
 
-            <h3 className="font-serif text-xl text-cream mt-6 mb-3">4.4 How refunds reach you</h3>
+          <Section title="9. Liability">
             <p>
-              Approved refunds are routed back to the same card / UPI / netbanking
-              account used to pay. Once initiated, you will receive an SMS containing
-              the Razorpay reference. Razorpay typically credits the amount within 5–7
-              working days; some banks may take longer. For disputes, please share the
-              Razorpay reference when contacting us.
+              We take reasonable care of property left at the venue, but do not
+              accept liability for loss of personal belongings. Allergens are
+              noted to the best of our ability — please inform our staff of any
+              allergies before ordering. TRESSA&apos;s aggregate liability for any
+              claim arising from a Priority Booking is limited to the ₹{BOOKING_FEE_INR}{' '}
+              reservation fee paid.
             </p>
           </Section>
 
-          <Section title="5. Conduct &amp; Right of Admission">
+          <Section title="10. Changes to these Terms">
             <p>
-              TRESSA World reserves the right of admission. Guests who are visibly
-              intoxicated, disruptive, or in violation of venue rules may be asked
-              to leave without a refund. Smoking is permitted only in designated areas.
-              Pets are not allowed inside indoor dining areas.
+              We may update these Terms from time to time. The version in force
+              for any given booking is the one published on this page on the
+              date the booking is paid. Continued use of our booking system
+              after a change constitutes acceptance of the revised Terms.
             </p>
           </Section>
 
-          <Section title="6. Liability">
-            <p>
-              We take reasonable care of property left at the venue, but do not accept
-              liability for loss of personal belongings. Allergens are noted to the best
-              of our ability — please inform our staff of any allergies before ordering.
-            </p>
-          </Section>
-
-          <Section title="7. Changes to these Terms">
-            <p>
-              We may update these Terms from time to time. The version in force is the
-              one published on this page on the date of your booking. Continued use of
-              our booking system after a change constitutes acceptance of the revised
-              Terms.
-            </p>
-          </Section>
-
-          <Section title="8. Contact">
-            <p>
-              For booking, refund, or general queries:
-            </p>
+          <Section title="11. Contact">
+            <p>For booking, refund, or general queries:</p>
             <ul className="space-y-1 mt-3 text-sm">
               <li>
                 Email:{' '}
                 <a href={`mailto:${SITE.business.email ?? ''}`} className="text-gold underline">
                   {SITE.business.email}
+                </a>
+              </li>
+              <li>
+                Reservations:{' '}
+                <a href={`mailto:${SITE.business.reservationsEmail ?? ''}`} className="text-gold underline">
+                  {SITE.business.reservationsEmail}
                 </a>
               </li>
               <li>
@@ -176,8 +224,10 @@ export default function TermsPage() {
           </Section>
 
           <p className="mt-16 text-xs text-cream/40">
-            By making a booking with TRESSA World you confirm that you have read and
-            agree to these Terms &amp; Conditions.{' '}
+            By paying the ₹{BOOKING_FEE_INR} reservation fee you confirm that you
+            have read and agree to these Terms &amp; Conditions, including the
+            non-refundable nature of the fee and the {BOOKING_CODE_GRACE_MIN}-minute
+            QR validity.{' '}
             <Link href="/" className="text-gold underline">Back to home</Link>.
           </p>
         </div>

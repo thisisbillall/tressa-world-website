@@ -11,13 +11,14 @@ type Props = AnchorHTMLAttributes<HTMLAnchorElement> & {
 const isInternal = (href: string) =>
   !!href && !href.startsWith('#') && !href.startsWith('http') && !href.startsWith('mailto:') && !href.startsWith('tel:');
 
-// Eagerly load the Scene3D chunk when any booking-bound link mounts,
-// so the doors aren't racing against three.js init.
+// Pre-warm the booking client chunk so the form renders immediately after
+// the page transition. The old Scene3D preload is gone — the simple booking
+// page no longer pulls in three.js.
 let bookingChunkPreloaded = false;
 function preloadBookingChunk() {
   if (bookingChunkPreloaded) return;
   bookingChunkPreloaded = true;
-  import('@/components/booking/Scene3D').catch(() => { bookingChunkPreloaded = false; });
+  import('@/app/booking/BookingClient').catch(() => { bookingChunkPreloaded = false; });
 }
 
 export default function TressaLink({ href, mode = 'enter', onClick, children, ...rest }: Props) {

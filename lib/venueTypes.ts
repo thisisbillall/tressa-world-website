@@ -3,7 +3,7 @@
 
 export type VenueId = 'restaurant' | 'rooftop' | 'bar' | 'suites';
 
-export type SlotId = 'lunch' | 'tea' | 'dinner' | 'night';
+export type SlotId = 'evening' | 'late';
 
 export type Slot = {
   id: SlotId;

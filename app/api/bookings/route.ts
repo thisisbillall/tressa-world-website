@@ -3,9 +3,8 @@ import { pool, queryMany } from '@/lib/db';
 import {
   BookingInput,
   cleanupStaleBookings,
+  computeCodeExpiry,
   findSuite,
-  findTableSeats,
-  findVenueCharge,
   nightsBetween,
   validateBooking,
 } from '@/lib/bookings';
@@ -13,6 +12,7 @@ import { isRazorpayConfigured, rzp, RZP_KEY_ID } from '@/lib/razorpay';
 import { guardDbConfigured, jsonError } from '@/lib/apiError';
 import { generateBookingCode } from '@/lib/bookingCode';
 import { sendBookingConfirmationSmsOnce } from '@/lib/twilio';
+import { BOOKING_FEE_INR } from '@/lib/venueConfig';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -108,18 +108,24 @@ export async function POST(req: NextRequest) {
         );
       }
     } else {
-      // Table booking — compute cover charge from venue_charges.
-      const perPerson = await findVenueCharge(body.venue);
-      const guests = Number(body.guests || 0);
-      amount = perPerson * guests;
-      mark(`table path perPerson=${perPerson} guests=${guests} amount=${amount}`);
+      // Flat reservation fee, redeemable against the venue bill at billing —
+      // no table selection, no per-head math. The 15% off Tressa Pay benefit
+      // stacks on top when the slot is Exclusive.
+      amount = BOOKING_FEE_INR;
+      mark(`table path flat fee=${amount}`);
     }
 
-    // guests > table.seats → flagged for the manager; pricing unchanged.
-    // Computed server-side from the layout so the client can't forge the flag.
-    const tableSeats = findTableSeats(body.venue, body.table_ref);
-    const isSpecial = !isSuite && tableSeats != null && Number(body.guests || 0) > tableSeats;
-    if (isSpecial) mark(`special booking: guests=${body.guests} > seats=${tableSeats}`);
+    // Special-booking flag is no longer driven by table seat counts — leave
+    // it false and let the admin desk mark large parties manually.
+    const isSpecial = false;
+
+    // 15-min interval bookings — `reservation_time` is canonical (HH:MM).
+    // slot_id is no longer persisted; the priority-window check happens at
+    // SMS / scan time from reservation_time directly.
+    const hhmm = !isSuite && body.reservation_time ? body.reservation_time.slice(0, 5) : null;
+    const codeExpiresAt = !isSuite && body.reservation_date && hhmm
+      ? computeCodeExpiry(body.reservation_date, hhmm)
+      : null;
 
     // Razorpay must be configured up-front if the booking will require payment,
     // so we fail before reserving a DB slot for a booking we can't complete.
@@ -149,7 +155,7 @@ export async function POST(req: NextRequest) {
         notes,
         amount, payment_status, razorpay_order_id,
         is_special,
-        booking_code,
+        booking_code, code_expires_at,
         status
       ) VALUES (
         $1, $2, $3,
@@ -160,7 +166,7 @@ export async function POST(req: NextRequest) {
         $14,
         $15, $16, NULL,
         $17,
-        $18,
+        $18, $19,
         'pending'
       ) RETURNING *`;
 
@@ -168,13 +174,13 @@ export async function POST(req: NextRequest) {
     const params = [
       body.customer_name.trim(),
       body.customer_phone.trim(),
-      body.customer_email.trim(),
+      (body.customer_email ?? '').trim(),
       body.venue,
       isSuite ? null : body.reservation_date,
-      isSuite ? null : body.reservation_time,
+      isSuite ? null : hhmm,
       isSuite ? null : body.guests ?? null,
-      isSuite ? null : body.table_ref ?? null,
-      isSuite ? null : body.slot_id ?? null,
+      null, // table_ref — no table selection in the simplified flow
+      null, // slot_id — replaced by free-form 15-min reservation_time
       isSuite ? resolvedSuiteName : null,
       isSuite ? body.check_in : null,
       isSuite ? body.check_out : null,
@@ -184,6 +190,7 @@ export async function POST(req: NextRequest) {
       paymentStatus,
       isSpecial,
       bookingCode,
+      codeExpiresAt,
     ];
 
     mark('db insert (reserve slot) starting');

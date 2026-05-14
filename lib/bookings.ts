@@ -1,10 +1,12 @@
 // Shared booking helpers: validation, nights math, suite lookup, cleanup.
 
 import { pool, queryOne } from './db';
-import { SKY_TABLES } from './layouts/sky';
-import { UNWIND_TABLES } from './layouts/unwind';
-import { SOUL_TABLES } from './layouts/soul';
-import type { Table } from './venueTypes';
+import {
+  BOOKING_CODE_GRACE_MIN,
+  BOOKING_END_HHMM,
+  BOOKING_START_HHMM,
+  isValidBookingTime,
+} from './venueConfig';
 
 export type VenueChargeRow = {
   venue: string;
@@ -52,21 +54,31 @@ export type SuiteRow = {
   is_active: boolean;
 };
 
-// Look up a table's seat count from the static layout files by its display label
-// ("F-1", "R-4", "L-6", …). Used server-side to compute is_special from guests.
-// Prefixes match the POS's restaurant_tables.table_name convention:
-//   F-* = Soul (family restaurant) · L-* = Unwind (lounge/bar) · R-* = Sky (rooftop)
-const TABLES_BY_VENUE: Record<'bar' | 'restaurant' | 'rooftop', Table[]> = {
-  bar: UNWIND_TABLES,
-  restaurant: SOUL_TABLES,
-  rooftop: SKY_TABLES,
-};
+// Tables aren't pre-assigned in the simplified booking flow — guests just
+// reserve a slot. Kept exported as a no-op so older callers (admin / SMS
+// preview) don't have to change their signatures.
+export function findTableSeats(_venue: VenueKey, _tableRef?: string | null): number | null {
+  return null;
+}
 
-export function findTableSeats(venue: VenueKey, tableRef?: string | null): number | null {
-  if (venue === 'suite' || !tableRef) return null;
-  const tables = TABLES_BY_VENUE[venue];
-  const match = tables?.find((t) => t.label === tableRef);
-  return match ? match.seats : null;
+// Combine reservation date + HH:MM time into a UTC timestamp + grace window.
+// IST is UTC+5:30 — encoded directly in the ISO string so the server's local
+// timezone doesn't shift the result. '24:00' is normalised to 00:00 of the
+// following day (midnight at the end of the reservation date).
+export function computeCodeExpiry(reservationDate: string, hhmm: string): Date | null {
+  if (!hhmm || hhmm.length < 5) return null;
+  let dateStr = reservationDate;
+  let timeStr = hhmm.slice(0, 5);
+  if (timeStr === '24:00') {
+    const [y, mo, d] = reservationDate.split('-').map(Number);
+    if (!y || !mo || !d) return null;
+    const next = new Date(Date.UTC(y, mo - 1, d + 1));
+    dateStr = next.toISOString().slice(0, 10);
+    timeStr = '00:00';
+  }
+  const ist = new Date(`${dateStr}T${timeStr}:00+05:30`);
+  if (Number.isNaN(ist.getTime())) return null;
+  return new Date(ist.getTime() + BOOKING_CODE_GRACE_MIN * 60_000);
 }
 
 export function nightsBetween(checkIn: string, checkOut: string): number {
@@ -131,7 +143,6 @@ export async function cleanupStaleBookings(maxAgeMinutes = 5): Promise<number> {
 export function validateBooking(input: BookingInput): string | null {
   if (!input.customer_name?.trim()) return 'Name is required';
   if (!input.customer_phone?.trim()) return 'Phone is required';
-  if (!input.customer_email?.trim()) return 'Email is required';
   if (!['bar', 'restaurant', 'rooftop', 'suite'].includes(input.venue)) return 'Invalid venue';
 
   if (input.venue === 'suite') {
@@ -141,18 +152,11 @@ export function validateBooking(input: BookingInput): string | null {
   } else {
     if (!input.reservation_date) return 'Date is required';
     if (!input.reservation_time) return 'Time is required';
-    if (!input.guests || input.guests < 1) return 'Guests is required';
-
-    // Seat-aware minimum: a 6-seat table needs at least 5 guests.
-    // (No hard upper cap — oversized parties are accepted and flagged as
-    //  is_special by the POST route.)
-    const seats = findTableSeats(input.venue, input.table_ref);
-    if (seats != null) {
-      const minGuests = Math.max(1, seats - 1);
-      if (input.guests < minGuests) {
-        return `This table seats ${seats}. Minimum ${minGuests} guest${minGuests > 1 ? 's' : ''} required.`;
-      }
+    if (!isValidBookingTime(input.reservation_time.slice(0, 5))) {
+      return `Pick a time in 30-min steps between ${BOOKING_START_HHMM} and ${BOOKING_END_HHMM}.`;
     }
+    if (!input.guests || input.guests < 1) return 'Guests is required';
+    if (input.guests > 20) return 'For parties over 20, please contact us directly.';
   }
   return null;
 }

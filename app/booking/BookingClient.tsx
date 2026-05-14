@@ -1,344 +1,662 @@
 'use client';
-import dynamic from 'next/dynamic';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import TressaLink from '@/components/TressaLink';
-import { ArrowLeft, Loader2, Move, RotateCcw } from 'lucide-react';
-import { useSiteContent } from '@/lib/siteContent';
-import { fetchVenue } from '@/lib/venue';
-import { TIME_SLOTS } from '@/lib/venueConfig';
-import type { SlotId, Suite, Table, VenueData, VenueId } from '@/lib/venueTypes';
-import BookingPanel from '@/components/booking/BookingPanel';
-import { useRealtime } from '@/hooks/useRealtime';
+import { ArrowLeft, CalendarDays, ChevronDown, Clock, Users, Loader2, ShieldCheck, BadgePercent } from 'lucide-react';
+import {
+  BOOKING_DISCOUNT_PERCENT,
+  BOOKING_FEE_INR,
+  isPriorityTime,
+  listBookingTimes,
+  PRIORITY_WINDOWS,
+} from '@/lib/venueConfig';
+import type { VenueId } from '@/lib/venueTypes';
+import { sky, soul, unwind } from '@/lib/brandImages';
 import { apiFetch } from '@/lib/apiClient';
+import { broadcastTables } from '@/utils/broadcast';
 
-type SuiteRange = { suite_name: string; check_in: string; check_out: string };
+type ApiVenue = 'restaurant' | 'rooftop' | 'bar' | 'suite';
 
-const Scene3D = dynamic(() => import('@/components/booking/Scene3D'), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-full flex items-center justify-center text-maroon/60">
-      <Loader2 className="animate-spin" />
-    </div>
-  )
-});
-
-const VENUES: { id: VenueId; label: string; disabled?: boolean }[] = [
-  { id: 'restaurant', label: 'Restaurant' },
-  { id: 'rooftop', label: 'The Sky' },
-  { id: 'bar', label: 'Bar' },
-  { id: 'suites', label: 'Aura · Coming Soon', disabled: true }
+const VENUES: {
+  id: VenueId;
+  apiVenue: ApiVenue;
+  label: string;
+  tag: string;
+  hero: { src: string; alt: string };
+  disabled?: boolean;
+  disabledReason?: string;
+}[] = [
+  {
+    id: 'restaurant',
+    apiVenue: 'restaurant',
+    label: 'Soul',
+    tag: 'Family Restaurant',
+    hero: { src: soul[0]?.src ?? '/Soul/DSC08024.JPG', alt: soul[0]?.alt ?? 'TRESSA Soul' },
+  },
+  {
+    id: 'rooftop',
+    apiVenue: 'rooftop',
+    label: 'Sky',
+    tag: 'Rooftop Lounge',
+    hero: { src: sky[0]?.src ?? '/Sky/DSC08185.JPG', alt: sky[0]?.alt ?? 'TRESSA Sky' },
+  },
+  {
+    id: 'bar',
+    apiVenue: 'bar',
+    label: 'Unwind',
+    tag: 'Signature Bar',
+    hero: { src: unwind[0]?.src ?? '/Unwind/DSC09753.JPG', alt: unwind[0]?.alt ?? 'TRESSA Unwind' },
+  },
+  {
+    id: 'suites',
+    apiVenue: 'suite',
+    label: 'Aura',
+    tag: 'Luxury Suites · Coming Soon',
+    hero: { src: '/Sky/DSC08230.JPG', alt: 'TRESSA Aura — Luxury Suites' },
+    disabled: true,
+    disabledReason: 'Aura suite booking opens soon. Stay tuned.',
+  },
 ];
 
-// Suites are under development — not a valid target until launch.
-const VALID_VENUES: VenueId[] = ['restaurant', 'rooftop', 'bar'];
+declare global {
+  interface Window { Razorpay: any }
+}
+
+let razorpayScriptPromise: Promise<boolean> | null = null;
+function loadRazorpayScript(): Promise<boolean> {
+  if (typeof window === 'undefined') return Promise.resolve(false);
+  if (window.Razorpay) return Promise.resolve(true);
+  if (razorpayScriptPromise) return razorpayScriptPromise;
+  razorpayScriptPromise = new Promise((resolve) => {
+    const s = document.createElement('script');
+    s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    s.async = true;
+    s.dataset.rzpCheckout = 'true';
+    s.onload = () => resolve(true);
+    s.onerror = () => { razorpayScriptPromise = null; resolve(false); };
+    document.body.appendChild(s);
+  });
+  return razorpayScriptPromise;
+}
+
+type ConfirmedBooking = {
+  id: string;
+  booking_code: string;
+  code_expires_at: string | null;
+  reservation_time: string | null;
+};
 
 export default function BookingClient() {
   const searchParams = useSearchParams();
-  const initialVenue = (() => {
+  const router = useRouter();
+  const initialId = (() => {
     const q = searchParams.get('venue') as VenueId | null;
-    return q && VALID_VENUES.includes(q) ? q : 'restaurant';
+    return q && VENUES.some((v) => v.id === q && !v.disabled) ? q : 'restaurant';
   })();
-  const [venueId, setVenueId] = useState<VenueId>(initialVenue);
-  const [siteContent] = useSiteContent();
-  const slotLabel = (id: string) => siteContent.timeSlots.find((s) => s.id === id)?.label
-    ?? TIME_SLOTS.find((s) => s.id === id)?.label ?? id;
 
-  // keep the tab in sync if the URL changes while the page is open
-  useEffect(() => {
-    const q = searchParams.get('venue') as VenueId | null;
-    if (q && VALID_VENUES.includes(q) && q !== venueId) {
-      setVenueId(q);
-    }
-  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
-  const [venue, setVenue] = useState<VenueData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [slot, setSlot] = useState<SlotId>('dinner');
+  const [venueId, setVenueId] = useState<VenueId>(initialId);
+  const venue = useMemo(() => VENUES.find((v) => v.id === venueId)!, [venueId]);
+
+  const times = useMemo(() => listBookingTimes(), []);
+  const exclusiveTimes = useMemo(() => times.filter((t) => t.priority), [times]);
+  const premiumTimes = useMemo(() => times.filter((t) => !t.priority), [times]);
+  const defaultTime = exclusiveTimes[0]?.value ?? times[0]?.value ?? '15:00';
+
   const [date, setDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
-  const [selectedTable, setSelectedTable] = useState<Table | null>(null);
-  const [selectedSuite, setSelectedSuite] = useState<Suite | null>(null);
-  const [panelOpen, setPanelOpen] = useState(false);
-  const [resetKey, setResetKey] = useState(0);
+  const [slotType, setSlotType] = useState<'exclusive' | 'premium'>('exclusive');
+  const [time, setTime] = useState<string>(defaultTime);
+  const [guests, setGuests] = useState<number>(2);
+  const [agreed, setAgreed] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [confirmed, setConfirmed] = useState<ConfirmedBooking | null>(null);
 
-  // Live availability sourced from the bookings table via SSE.
-  const [reservedTableRefs, setReservedTableRefs] = useState<Set<string>>(new Set());
-  const [reservedSuiteRanges, setReservedSuiteRanges] = useState<SuiteRange[]>([]);
-  const availabilityDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  useEffect(() => { void loadRazorpayScript(); }, []);
 
-  const apiVenue = venueId === 'suites' ? 'suite' : venueId;
-
-  const loadAvailability = useCallback(async () => {
-    try {
-      const qs = new URLSearchParams({ venue: apiVenue, date, slot });
-      const json = await apiFetch<any>(`/api/availability?${qs.toString()}`, { cache: 'no-store' });
-      setReservedTableRefs(new Set<string>(json.reserved_tables || []));
-      setReservedSuiteRanges(json.reserved_suite_ranges || []);
-    } catch (e: any) {
-      console.warn('[availability]', e?.message || e);
+  const switchSlotType = (next: 'exclusive' | 'premium') => {
+    if (next === slotType) return;
+    setSlotType(next);
+    const pool = next === 'exclusive' ? exclusiveTimes : premiumTimes;
+    if (!pool.some((t) => t.value === time)) {
+      setTime(pool[0]?.value ?? defaultTime);
     }
-  }, [apiVenue, date, slot]);
+  };
 
-  useEffect(() => { loadAvailability(); }, [loadAvailability]);
+  const selectVenue = (id: VenueId) => {
+    const v = VENUES.find((x) => x.id === id);
+    if (!v || v.disabled) return;
+    setVenueId(id);
+    setErrorMsg(null);
+    setConfirmed(null);
+    router.replace(`/booking?venue=${id}`, { scroll: false });
+  };
 
-  // Any booking insert/update/delete invalidates availability for every open client.
-  useRealtime({
-    tables: ['bookings'],
-    onInsert: () => {
-      if (availabilityDebounceRef.current) clearTimeout(availabilityDebounceRef.current);
-      availabilityDebounceRef.current = setTimeout(loadAvailability, 300);
-    },
-    onUpdate: () => {
-      if (availabilityDebounceRef.current) clearTimeout(availabilityDebounceRef.current);
-      availabilityDebounceRef.current = setTimeout(loadAvailability, 300);
-    },
-    onDelete: () => {
-      if (availabilityDebounceRef.current) clearTimeout(availabilityDebounceRef.current);
-      availabilityDebounceRef.current = setTimeout(loadAvailability, 300);
-    },
-  });
+  const priority = isPriorityTime(time);
 
-  // Lock page scroll — the 3D canvas must own touch gestures on mobile
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
-  }, []);
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (sending) return;
+    setErrorMsg(null);
 
-  const reloadVenue = useCallback(async () => {
-    const v = await fetchVenue(venueId);
-    setVenue(v);
-    setLoading(false);
-  }, [venueId]);
+    if (venue.disabled) {
+      setErrorMsg(venue.disabledReason || 'Bookings not open for this venue yet.');
+      return;
+    }
+    if (!agreed) {
+      setErrorMsg('Please accept the Terms & non-refundable reservation policy to continue.');
+      return;
+    }
+    if (guests < 1 || guests > 20) {
+      setErrorMsg('Guests must be between 1 and 20.');
+      return;
+    }
 
-  useEffect(() => {
-    setLoading(true);
-    setSelectedTable(null);
-    setSelectedSuite(null);
-    setPanelOpen(false);
-    reloadVenue();
-  }, [venueId, reloadVenue]);
+    const fd = new FormData(e.currentTarget);
+    const name = String(fd.get('name') || '').trim();
+    const phone = String(fd.get('phone') || '').trim();
+    const email = String(fd.get('email') || '').trim();
+    const notes = String(fd.get('notes') || '').trim() || undefined;
 
-  // Suite pricing / catalogue changes (e.g. manager edits a row) → resync the
-  // 3D scene so positions stay put but prices refresh. Only matters on 'suites'.
-  const suitesDebounceRef = useRef<NodeJS.Timeout | null>(null);
-  useRealtime({
-    tables: ['suites'],
-    onInsert: () => {
-      if (venueId !== 'suites') return;
-      if (suitesDebounceRef.current) clearTimeout(suitesDebounceRef.current);
-      suitesDebounceRef.current = setTimeout(reloadVenue, 300);
-    },
-    onUpdate: () => {
-      if (venueId !== 'suites') return;
-      if (suitesDebounceRef.current) clearTimeout(suitesDebounceRef.current);
-      suitesDebounceRef.current = setTimeout(reloadVenue, 300);
-    },
-    onDelete: () => {
-      if (venueId !== 'suites') return;
-      if (suitesDebounceRef.current) clearTimeout(suitesDebounceRef.current);
-      suitesDebounceRef.current = setTimeout(reloadVenue, 300);
-    },
-  });
-
-  // Merge DB availability into venue.tables so Scene3D's existing
-  // `table.availability[slot]` logic reflects actual bookings.
-  const liveVenue = useMemo<VenueData | null>(() => {
-    if (!venue) return null;
-    if (!venue.tables || reservedTableRefs.size === 0) return venue;
-    return {
-      ...venue,
-      tables: venue.tables.map((t) =>
-        reservedTableRefs.has(t.label)
-          ? { ...t, availability: { ...t.availability, [slot]: false } }
-          : t,
-      ),
+    const payload = {
+      venue: venue.apiVenue,
+      customer_name: name,
+      customer_phone: phone,
+      customer_email: email,
+      reservation_date: date,
+      reservation_time: time,
+      guests,
+      notes,
     };
-  }, [venue, reservedTableRefs, slot]);
 
-  const availableCount = useMemo(() => {
-    if (!liveVenue?.tables) return 0;
-    return liveVenue.tables.filter((t) => t.availability[slot]).length;
-  }, [liveVenue, slot]);
+    try {
+      setSending(true);
+      const json = await apiFetch<any>('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
-  const suiteOccupancy = useMemo(() => {
-    // suite_name → count of active/future bookings
-    const map = new Map<string, number>();
-    for (const r of reservedSuiteRanges) {
-      map.set(r.suite_name, (map.get(r.suite_name) || 0) + 1);
+      const booking = json.data;
+      const rzpCfg = json.razorpay;
+      broadcastTables(['bookings']);
+
+      if (!rzpCfg?.order_id) {
+        setConfirmed({
+          id: booking.id,
+          booking_code: booking.booking_code,
+          code_expires_at: booking.code_expires_at,
+          reservation_time: booking.reservation_time,
+        });
+        setSending(false);
+        return;
+      }
+
+      const loaded = await loadRazorpayScript();
+      if (!loaded) throw new Error('Could not load the payment gateway. Please retry.');
+
+      let paid = false;
+      const releaseSlot = (reason: 'dismissed' | 'failed') => {
+        if (paid) return;
+        broadcastTables(['bookings']);
+        setErrorMsg(
+          reason === 'dismissed'
+            ? 'Booking cancelled. No payment was charged.'
+            : 'Payment failed. Please try booking again.',
+        );
+        fetch(`/api/bookings/${booking.id}?order_id=${encodeURIComponent(rzpCfg.order_id)}`, {
+          method: 'DELETE',
+          keepalive: true,
+        }).catch(() => {});
+      };
+
+      const rz = new window.Razorpay({
+        key: rzpCfg.key_id,
+        amount: rzpCfg.amount,
+        currency: rzpCfg.currency,
+        order_id: rzpCfg.order_id,
+        name: 'TRESSA PAY',
+        description: `${venue.label} · ${date} · ${time} · ${guests} guest${guests > 1 ? 's' : ''}`,
+        prefill: { name, email, contact: phone },
+        theme: { color: '#5E141E' },
+        handler: async (response: any) => {
+          paid = true;
+          try {
+            const vj = await apiFetch<any>('/api/razorpay/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                booking_id: booking.id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+            broadcastTables(['bookings']);
+            setConfirmed({
+              id: vj.data.id,
+              booking_code: vj.data.booking_code,
+              code_expires_at: vj.data.code_expires_at,
+              reservation_time: vj.data.reservation_time,
+            });
+          } catch (err: any) {
+            setErrorMsg(err?.message || 'Payment verification failed.');
+          } finally {
+            setSending(false);
+          }
+        },
+        modal: { ondismiss: () => { setSending(false); releaseSlot('dismissed'); } },
+      });
+      rz.on('payment.failed', () => { setSending(false); releaseSlot('failed'); });
+      rz.open();
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Something went wrong.');
+      setSending(false);
     }
-    return map;
-  }, [reservedSuiteRanges]);
-
-  const handleSelectTable = (t: Table) => {
-    if (reservedTableRefs.has(t.label)) return; // already booked for this slot/date
-    setTimeout(() => setPanelOpen(true), 900);
-    setSelectedTable(t);
-    setSelectedSuite(null);
-  };
-
-  const handleSelectSuite = (s: Suite) => {
-    setTimeout(() => setPanelOpen(true), 900);
-    setSelectedSuite(s);
-    setSelectedTable(null);
-  };
-
-  const deselect = () => {
-    setPanelOpen(false);
-    setTimeout(() => {
-      setSelectedTable(null);
-      setSelectedSuite(null);
-    }, 400);
   };
 
   return (
-    <main className="fixed inset-0 bg-[#fdf8ea] text-ink overflow-hidden touch-none">
-      {/* top bar */}
-      <header className="fixed top-0 left-0 right-0 z-30 px-4 md:px-10 py-3 md:py-5 flex items-center justify-between bg-gradient-to-b from-white/90 to-white/20 backdrop-blur-sm border-b border-maroon/10">
-        <TressaLink href="/" mode="leave" className="flex items-center gap-1.5 text-[10px] md:text-[11px] tracking-[0.25em] uppercase text-maroon hover:text-gold transition-colors shrink-0">
-          <ArrowLeft size={14} /> Back
-        </TressaLink>
-        <p className="font-serif tracking-[0.3em] md:tracking-[0.4em] text-maroon text-sm md:text-lg truncate mx-3">TRESSA · BOOK</p>
-        <div className="text-[9px] md:text-[10px] tracking-[0.2em] md:tracking-[0.3em] uppercase text-muted truncate hidden sm:block">
-          {venue?.name ?? '...'}
-        </div>
-      </header>
-
-      {/* 3D canvas */}
-      <div className="absolute inset-0 touch-none" style={{ touchAction: 'none' }}>
-        {liveVenue && !loading && (
-          <Scene3D
-            key={`${liveVenue.id}-${resetKey}`}
-            venue={liveVenue}
-            slot={slot}
-            selectedId={selectedTable?.id ?? selectedSuite?.id ?? null}
-            onSelectTable={handleSelectTable}
-            onSelectSuite={handleSelectSuite}
-          />
-        )}
-        {loading && (
-          <div className="absolute inset-0 flex items-center justify-center text-maroon/70">
-            <Loader2 className="animate-spin mr-3" /> Loading {venueId}…
-          </div>
-        )}
-      </div>
-
-      {/* bottom control rail */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 p-3 md:p-8 bg-gradient-to-t from-[#fdf8ea] via-[#fdf8ea]/85 to-transparent pointer-events-none">
-        <div className="max-w-6xl mx-auto pointer-events-auto">
-          <div className="flex gap-1.5 md:gap-3 mb-2 md:mb-4 flex-wrap">
-            {VENUES.map((v) => (
-              <button
-                key={v.id}
-                onClick={() => !v.disabled && setVenueId(v.id)}
-                disabled={v.disabled}
-                title={v.disabled ? 'Aura (Suites) is under development' : undefined}
-                className={`px-3 md:px-5 py-1.5 md:py-2.5 text-[9px] md:text-[11px] tracking-[0.2em] md:tracking-[0.25em] uppercase border transition-all ${
-                  v.disabled
-                    ? 'bg-white/40 border-maroon/10 text-muted/60 cursor-not-allowed italic'
-                    : venueId === v.id
-                      ? 'bg-maroon text-cream border-maroon'
-                      : 'bg-white/80 border-maroon/20 text-maroon hover:border-gold hover:text-gold'
-                }`}
-              >
-                {v.label}
-              </button>
-            ))}
-          </div>
-
-          {liveVenue?.tables && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex flex-row items-end gap-2 md:gap-4 bg-white/90 backdrop-blur-md border border-maroon/10 p-2.5 md:p-5 shadow-[0_10px_40px_rgba(94,20,30,0.08)]"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-[8px] md:text-[9px] tracking-[0.25em] md:tracking-[0.3em] uppercase text-maroon mb-1.5 md:mb-2">Time Slot</p>
-                <div className="flex gap-1 md:gap-2 flex-wrap">
-                  {TIME_SLOTS.map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => setSlot(s.id)}
-                      className={`px-2 md:px-3 py-1 md:py-2 text-[8px] md:text-[10px] tracking-[0.1em] md:tracking-[0.15em] uppercase border transition-all ${slot === s.id
-                          ? 'bg-maroon border-maroon text-cream'
-                          : 'border-maroon/15 text-muted hover:border-gold hover:text-maroon'
-                        }`}
-                    >
-                      {slotLabel(s.id)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="shrink-0">
-                <input
-                  type="date"
-                  value={date}
-                  min={new Date().toISOString().slice(0, 10)}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="bg-white border border-maroon/15 text-ink text-[11px] md:text-sm px-2 md:px-3 py-1 md:py-2 focus:outline-none focus:border-gold w-[115px] md:w-auto"
-                />
-              </div>
-
-              <div className="text-right shrink-0 pl-2 md:pl-4 border-l border-maroon/10">
-                <p className="text-[8px] md:text-[9px] tracking-[0.2em] md:tracking-[0.3em] uppercase text-maroon">Open</p>
-                <p className="font-serif text-lg md:text-2xl text-maroon">
-                  {availableCount}<span className="text-muted text-[10px] md:text-sm">/{liveVenue.tables.length}</span>
-                </p>
-              </div>
-            </motion.div>
-          )}
-
-          {liveVenue?.suites && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white/90 backdrop-blur-md border border-maroon/10 p-4 md:p-5 text-[11px] tracking-[0.2em] uppercase text-muted shadow-[0_10px_40px_rgba(94,20,30,0.08)]"
-            >
-              Click a suite to preview and pick your dates. {liveVenue.suites.length} suites available
-              {reservedSuiteRanges.length > 0 && ` · ${reservedSuiteRanges.length} active booking${reservedSuiteRanges.length > 1 ? 's' : ''}`}.
-            </motion.div>
-          )}
-        </div>
-      </div>
-
-      {/* hint */}
-      {!selectedTable && !selectedSuite && !loading && (
-        <motion.div
+    <main className="min-h-screen bg-[#fdf8ea] text-ink md:h-screen md:overflow-hidden">
+      <div className="md:grid md:grid-cols-2 md:h-full">
+        {/* LEFT — full-bleed venue image */}
+        <motion.aside
+          key={venueId}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.8, duration: 0.8 }}
-          className="absolute top-14 md:top-24 left-1/2 -translate-x-1/2 z-10 text-center pointer-events-none px-4"
+          transition={{ duration: 0.5 }}
+          className="relative h-[55vh] md:h-full w-full overflow-hidden bg-black"
         >
-          <p className="text-[10px] tracking-[0.4em] md:tracking-[0.5em] uppercase text-maroon">
-            Tap a {venue?.suites ? 'Suite' : 'Table'} to zoom
-          </p>
-          <p className="text-[9px] md:text-[10px] tracking-[0.3em] uppercase text-muted mt-1 flex items-center justify-center gap-2">
-            <Move size={11} /> Drag · Pinch to zoom
-          </p>
-        </motion.div>
-      )}
+          <Image
+            src={venue.hero.src}
+            alt={venue.hero.alt}
+            fill
+            priority
+            quality={92}
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/40" />
 
-      {/* reset view */}
-      <button
-        onClick={() => { deselect(); setResetKey((k) => k + 1); }}
-        className="absolute top-14 right-3 md:top-24 md:right-6 z-10 w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-white/90 border border-maroon/15 text-maroon hover:border-gold hover:text-gold transition-colors shadow-sm"
-        aria-label="Reset view"
-        title="Reset view"
-      >
-        <RotateCcw size={14} />
-      </button>
+          <Link
+            href="/"
+            className="absolute top-5 left-5 md:top-8 md:left-8 z-10 flex items-center gap-1.5 text-[10px] md:text-[11px] tracking-[0.25em] uppercase text-cream/80 hover:text-gold transition-colors"
+          >
+            <ArrowLeft size={14} /> Back
+          </Link>
 
-      <BookingPanel
-        open={panelOpen}
-        venue={venueId}
-        selectedTable={selectedTable}
-        selectedSuite={selectedSuite}
-        slot={slot}
-        date={date}
-        onClose={deselect}
-      />
+          <div className="absolute top-5 right-5 md:top-8 md:right-8 z-10 font-serif tracking-[0.3em] md:tracking-[0.4em] text-cream text-sm md:text-lg">
+            TRESSA · BOOK
+          </div>
+
+          <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 text-cream">
+            <p className="text-[10px] tracking-[0.5em] uppercase text-cream/70 mb-2">Priority Booking</p>
+            <h1 className="font-serif text-3xl md:text-5xl font-light leading-tight">{venue.label}</h1>
+            <p className="text-[11px] md:text-xs tracking-[0.2em] uppercase mt-1.5 text-cream/80">{venue.tag}</p>
+
+            <div className="mt-5 flex flex-wrap gap-2 md:gap-3 max-w-md">
+              <Badge dark icon={<BadgePercent size={14} />} title={`${BOOKING_DISCOUNT_PERCENT}% OFF total bill`} />
+              <Badge dark icon={<ShieldCheck size={14} />} title={`₹${BOOKING_FEE_INR} redeemed on bill`} />
+            </div>
+          </div>
+        </motion.aside>
+
+        {/* RIGHT — form column */}
+        <section className="md:h-full md:overflow-y-auto px-5 md:px-12 py-8 md:py-12">
+          <div className="max-w-3xl mx-auto">
+            <p className="text-[10px] tracking-[0.5em] uppercase text-maroon mb-2">Reserve your time</p>
+            <h2 className="font-serif text-2xl md:text-3xl font-light text-ink">
+              One step. ₹{BOOKING_FEE_INR} reservation, {BOOKING_DISCOUNT_PERCENT}% OFF total bill.
+            </h2>
+            <p className="mt-2 text-sm text-muted">
+              A Tressa-exclusive discount benefit beyond Zomato &amp; Swiggy.
+              <span className="block mt-1 text-[11px]">
+                {BOOKING_DISCOUNT_PERCENT}% off applies only for bookings in {PRIORITY_WINDOWS.map((w) => w.label).join(' or ')}.
+              </span>
+              <span className="block mt-1 text-[11px] text-maroon">
+                Your ₹{BOOKING_FEE_INR} booking amount is redeemed against your total bill at the venue.
+              </span>
+            </p>
+
+            <div className="flex flex-wrap gap-2 my-6">
+              {VENUES.map((v) => (
+                <button
+                  key={v.id}
+                  onClick={() => selectVenue(v.id)}
+                  disabled={v.disabled}
+                  title={v.disabled ? v.disabledReason : undefined}
+                  className={`px-3 py-2 text-[10px] md:text-[11px] tracking-[0.25em] uppercase border transition-all ${
+                    v.disabled
+                      ? 'bg-white/40 border-maroon/10 text-muted/60 cursor-not-allowed italic'
+                      : venueId === v.id
+                        ? 'bg-maroon text-cream border-maroon'
+                        : 'bg-white border-maroon/20 text-maroon hover:border-gold hover:text-gold'
+                  }`}
+                >
+                  {v.label}
+                  {v.disabled && <span className="ml-2 text-[8px] opacity-70">soon</span>}
+                </button>
+              ))}
+            </div>
+
+            <AnimatePresence mode="wait">
+              {confirmed ? (
+                <motion.div
+                  key="confirmed"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="bg-white border border-maroon/15 p-6 md:p-8 text-center"
+                >
+                  <div className="w-14 h-14 mx-auto rounded-full border-2 border-gold flex items-center justify-center text-gold text-2xl">✓</div>
+                  <h3 className="font-serif text-2xl md:text-3xl mt-5 font-light text-maroon">Confirmed</h3>
+                  <p className="text-[10px] tracking-[0.3em] uppercase text-gold mt-2">
+                    BKG-{confirmed.id.slice(0, 8).toUpperCase()}
+                  </p>
+
+                  <div className="mt-6 bg-cream/40 border border-maroon/10 p-4">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`/api/qr/${encodeURIComponent(confirmed.booking_code)}?size=320`}
+                      alt={`QR for ${confirmed.booking_code}`}
+                      width={240}
+                      height={240}
+                      className="mx-auto block w-[220px] h-[220px]"
+                    />
+                    <p className="mt-3 font-mono text-xl tracking-[0.25em] text-maroon">
+                      {confirmed.booking_code}
+                    </p>
+                    {isPriorityTime(confirmed.reservation_time?.slice(0, 5)) ? (
+                      <p className="mt-2 text-[11px] text-muted">
+                        Show this QR / code at the venue for{' '}
+                        <strong className="text-maroon">{BOOKING_DISCOUNT_PERCENT}% OFF</strong> the total bill.
+                      </p>
+                    ) : (
+                      <p className="mt-2 text-[11px] text-muted">
+                        Your Premium slot is reserved. The {BOOKING_DISCOUNT_PERCENT}% bill discount is not applicable for this time.
+                      </p>
+                    )}
+                    {confirmed.code_expires_at && (
+                      <p className="mt-1 text-[10px] tracking-[0.25em] uppercase text-muted">
+                        Valid till{' '}
+                        {new Date(confirmed.code_expires_at).toLocaleString('en-IN', {
+                          day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true,
+                          timeZone: 'Asia/Kolkata',
+                        })}
+                      </p>
+                    )}
+                  </div>
+
+                  <p className="mt-5 text-xs text-muted">An SMS with the QR + PDF slip link has been sent to your phone.</p>
+
+                  <div className="mt-6 flex flex-wrap justify-center gap-3">
+                    <a
+                      href={`/api/booking-pdf/${encodeURIComponent(confirmed.booking_code)}`}
+                      target="_blank"
+                      rel="noopener"
+                      className="px-5 py-2.5 text-[11px] tracking-[0.25em] uppercase bg-gold text-maroon hover:bg-maroon hover:text-cream transition-colors"
+                    >
+                      Download Slip (PDF)
+                    </a>
+                    <a
+                      href={`/booking/qr/${encodeURIComponent(confirmed.booking_code)}`}
+                      target="_blank"
+                      rel="noopener"
+                      className="px-5 py-2.5 text-[11px] tracking-[0.25em] uppercase border border-maroon text-maroon hover:bg-maroon hover:text-cream transition-colors"
+                    >
+                      Open QR Page
+                    </a>
+                    <button
+                      onClick={() => { setConfirmed(null); setAgreed(false); }}
+                      className="px-5 py-2.5 text-[11px] tracking-[0.25em] uppercase bg-maroon text-cream"
+                    >
+                      New Booking
+                    </button>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.form
+                  key="form"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  onSubmit={submit}
+                  className="bg-white border border-maroon/15 p-5 md:p-8 space-y-5"
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Field label="Date" icon={<CalendarDays size={13} />}>
+                      <input
+                        type="date"
+                        required
+                        value={date}
+                        min={new Date().toISOString().slice(0, 10)}
+                        onChange={(e) => setDate(e.target.value)}
+                        className="w-full bg-transparent border-b border-maroon/20 text-ink text-sm py-2 focus:outline-none focus:border-gold transition-colors"
+                      />
+                    </Field>
+                    <Field label="Guests" icon={<Users size={13} />}>
+                      <input
+                        type="number"
+                        required
+                        min={1}
+                        max={20}
+                        value={guests}
+                        onChange={(e) => setGuests(Math.max(1, Math.min(20, Number(e.target.value) || 1)))}
+                        className="w-full bg-transparent border-b border-maroon/20 text-ink text-sm py-2 focus:outline-none focus:border-gold transition-colors"
+                      />
+                    </Field>
+                  </div>
+
+                  <div>
+                    <label className="text-[9px] tracking-[0.3em] uppercase text-maroon mb-2 flex items-center gap-1.5">
+                      <Clock size={13} /> Slot type
+                    </label>
+                    <div className="grid grid-cols-2 gap-2 mb-4">
+                      <button
+                        type="button"
+                        onClick={() => switchSlotType('exclusive')}
+                        className={`px-3 py-2.5 text-[10px] tracking-[0.25em] uppercase border transition-all ${
+                          slotType === 'exclusive'
+                            ? 'bg-maroon text-cream border-maroon'
+                            : 'bg-white border-maroon/20 text-maroon hover:border-gold hover:text-gold'
+                        }`}
+                      >
+                        Exclusive · {BOOKING_DISCOUNT_PERCENT}% OFF
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => switchSlotType('premium')}
+                        className={`px-3 py-2.5 text-[10px] tracking-[0.25em] uppercase border transition-all ${
+                          slotType === 'premium'
+                            ? 'bg-maroon text-cream border-maroon'
+                            : 'bg-white border-maroon/20 text-maroon hover:border-gold hover:text-gold'
+                        }`}
+                      >
+                        Premium
+                      </button>
+                    </div>
+                    <Field label="Time · 15-min slots" icon={<Clock size={13} />}>
+                      <TimeDropdown
+                        options={slotType === 'exclusive' ? exclusiveTimes : premiumTimes}
+                        value={time}
+                        onChange={setTime}
+                      />
+                    </Field>
+                  </div>
+
+                  <div
+                    className={`px-3 py-2 text-[11px] border ${
+                      priority
+                        ? 'bg-gold/10 border-gold/40 text-maroon'
+                        : 'bg-cream/40 border-maroon/15 text-muted'
+                    }`}
+                  >
+                    {priority ? (
+                      <>
+                        <strong className="text-maroon">Exclusive slot.</strong> Get{' '}
+                        <strong>{BOOKING_DISCOUNT_PERCENT}% OFF</strong> on the total bill
+                        via Tressa Pay.
+                      </>
+                    ) : (
+                      <>
+                        <strong className="text-maroon">Premium slot.</strong> Your reservation is held, but the {BOOKING_DISCOUNT_PERCENT}% discount
+                        applies only during 3:00 PM – 7:00 PM or 10:00 PM – 11:00 PM (Exclusive).
+                      </>
+                    )}
+                  </div>
+
+                  <TextInput label="Full Name" name="name" required autoComplete="name" />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <TextInput label="Phone" name="phone" type="tel" required autoComplete="tel" />
+                    <TextInput label="Email (optional)" name="email" type="email" autoComplete="email" />
+                  </div>
+
+                  <label className="flex items-start gap-3 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={agreed}
+                      onChange={(e) => setAgreed(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 accent-maroon flex-shrink-0 cursor-pointer"
+                    />
+                    <span className="text-[11px] text-muted leading-relaxed">
+                      I agree to TRESSA World&apos;s{' '}
+                      <a href="/terms" target="_blank" rel="noopener" className="text-maroon underline hover:text-gold">
+                        Terms &amp; Refund Policy
+                      </a>{' '}
+                      and acknowledge the ₹{BOOKING_FEE_INR} booking amount is redeemed on the total bill at the venue, and is non-refundable if the slot is not used.
+                    </span>
+                  </label>
+
+                  {errorMsg && (
+                    <p className="text-[11px] text-red-600 bg-red-50 border border-red-200 px-3 py-2">
+                      {errorMsg}
+                    </p>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={sending || !agreed || venue.disabled}
+                    className="w-full relative overflow-hidden py-4 text-[11px] tracking-[0.3em] uppercase bg-maroon text-cream font-medium group disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <span className="absolute inset-0 bg-gold translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+                    <span className="relative group-hover:text-maroon transition-colors flex items-center justify-center gap-2">
+                      {sending && <Loader2 className="animate-spin" size={14} />}
+                      {sending ? 'Processing…' : `Pay ₹${BOOKING_FEE_INR} & Confirm`}
+                    </span>
+                  </button>
+                </motion.form>
+              )}
+            </AnimatePresence>
+          </div>
+        </section>
+      </div>
     </main>
+  );
+}
+
+function Field({ label, icon, children }: { label: string; icon?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="text-[9px] tracking-[0.3em] uppercase text-maroon mb-2 flex items-center gap-1.5">
+        {icon} {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function TextInput({ label, ...rest }: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
+  return (
+    <div>
+      <label className="block text-[9px] tracking-[0.3em] uppercase text-maroon mb-2">{label}</label>
+      <input
+        {...rest}
+        className="w-full bg-transparent border-b border-maroon/20 text-ink text-sm py-2 focus:outline-none focus:border-gold transition-colors"
+      />
+    </div>
+  );
+}
+
+function TimeDropdown({
+  options,
+  value,
+  onChange,
+}: {
+  options: { value: string; label: string; priority: boolean }[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  const current = options.find((o) => o.value === value);
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className="w-full bg-transparent border-b border-maroon/20 text-ink text-[13px] py-2 flex items-center justify-between focus:outline-none focus:border-gold transition-colors"
+      >
+        <span>{current?.label ?? 'Select time'}</span>
+        <ChevronDown size={14} className={`text-maroon/60 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <ul
+          role="listbox"
+          className="absolute top-full left-0 right-0 mt-1 z-30 max-h-60 overflow-y-auto bg-white border border-maroon/15 shadow-[0_10px_30px_rgba(0,0,0,0.12)]"
+        >
+          {options.map((t) => {
+            const active = t.value === value;
+            return (
+              <li
+                key={t.value}
+                role="option"
+                aria-selected={active}
+                onClick={() => { onChange(t.value); setOpen(false); }}
+                className={`px-3 py-2 text-[13px] cursor-pointer transition-colors ${
+                  active
+                    ? 'bg-maroon text-cream'
+                    : 'text-ink hover:bg-cream/60'
+                }`}
+              >
+                {t.label}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function Badge({ icon, title, dark }: { icon: React.ReactNode; title: string; dark?: boolean }) {
+  return (
+    <div
+      className={`flex items-center gap-2 px-3 py-2 border text-[10px] tracking-[0.15em] uppercase ${
+        dark
+          ? 'border-gold/60 bg-black/30 text-cream backdrop-blur-sm'
+          : 'border-gold/40 bg-gold/5 text-maroon'
+      }`}
+    >
+      <span className="text-gold">{icon}</span>
+      <span className="truncate">{title}</span>
+    </div>
   );
 }

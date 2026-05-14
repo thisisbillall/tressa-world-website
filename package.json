@@ -12,11 +12,13 @@
   "dependencies": {
     "@react-three/drei": "^9.109.5",
     "@react-three/fiber": "^8.17.5",
+    "@vercel/blob": "^2.3.3",
     "framer-motion": "^11.3.19",
     "gsap": "^3.12.5",
     "lenis": "^1.1.9",
     "lucide-react": "^0.414.0",
     "next": "14.2.5",
+    "pdf-lib": "^1.17.1",
     "pg": "^8.20.0",
     "razorpay": "^2.9.6",
     "react": "18.3.1",

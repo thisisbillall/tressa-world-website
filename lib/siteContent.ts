@@ -145,57 +145,45 @@ export const DEFAULT_CONTENT: SiteContent = {
     }
   },
   spaces: [
-    { id: 'rooftop',    name: 'The Sky',           tagline: 'Skyline. Stars. Stories.', desc: 'Unwind above the city with cocktails, live acoustics and a view that never sleeps.', img: '/images/sky/tressa-sky-rooftop-hero.png' },
+    { id: 'rooftop', name: 'The Sky', tagline: 'Skyline. Stars. Stories.', desc: 'Unwind above the city with cocktails, live acoustics and a view that never sleeps.', img: '/images/sky/tressa-sky-rooftop-hero.png' },
     { id: 'restaurant', name: 'Soul · Family Restaurant', tagline: 'Warmth on every plate.', desc: 'A global menu served with the heart of a home kitchen — designed for every generation.', img: '/images/venues/soul/tressa-soul-01.webp' },
-    { id: 'bar',        name: 'Unwind · Bar',      tagline: 'Spirits, elevated.',        desc: 'Rare labels, house-aged infusions and bartenders who remember your drink.', img: '/images/venues/unwind/tressa-unwind-01.webp' },
-    { id: 'suites',     name: 'Luxury Suites',     tagline: 'Rest, re-imagined.',        desc: 'Curated suites where quiet luxury meets thoughtful design — your private retreat.', img: '/images/cave-dining.jpg' }
+    { id: 'bar', name: 'Unwind · Bar', tagline: 'Spirits, elevated.', desc: 'Rare labels, house-aged infusions and bartenders who remember your drink.', img: '/images/venues/unwind/tressa-unwind-01.webp' },
+    { id: 'suites', name: 'Luxury Suites', tagline: 'Rest, re-imagined.', desc: 'Curated suites where quiet luxury meets thoughtful design — your private retreat.', img: '/images/cave-dining.jpg' }
   ],
   suites: [
-    { id: 's1', tag: 'Signature', name: 'The Royal Suite',  desc: 'A 1,200 sq.ft haven with private terrace and sunken tub.', rate: '₹ 28,000', feat: ['King Bed', 'Terrace', 'Butler'], img: '/images/cave-dining.jpg' },
-    { id: 's2', tag: 'Premium',   name: 'Garden Suite',     desc: 'Verdant private garden with indoor-outdoor living.',        rate: '₹ 18,500', feat: ['Garden', 'Spa Tub'],            img: '/images/rooftop-terrace.jpg' },
-    { id: 's3', tag: 'Classic',   name: 'Heritage Suite',   desc: 'Old-world charm meets modern comfort.',                     rate: '₹ 14,200', feat: ['Courtyard', 'Library'],         img: '/images/private-dining.jpg' }
+    { id: 's1', tag: 'Signature', name: 'The Royal Suite', desc: 'A 1,200 sq.ft haven with private terrace and sunken tub.', rate: '₹ 28,000', feat: ['King Bed', 'Terrace', 'Butler'], img: '/images/cave-dining.jpg' },
+    { id: 's2', tag: 'Premium', name: 'Garden Suite', desc: 'Verdant private garden with indoor-outdoor living.', rate: '₹ 18,500', feat: ['Garden', 'Spa Tub'], img: '/images/rooftop-terrace.jpg' },
+    { id: 's3', tag: 'Classic', name: 'Heritage Suite', desc: 'Old-world charm meets modern comfort.', rate: '₹ 14,200', feat: ['Courtyard', 'Library'], img: '/images/private-dining.jpg' }
   ],
   menu: [
     {
       id: 'signatures', name: 'Signatures', items: [
-        { id: 'm1', name: 'Chef’s Signature Fillet', desc: 'Pan-seared fillet, herb crust, vibrant pepper coulis.', price: '₹ 1,080', img: '/images/signature-dishes/tressa-signature-fillet.jpg' },
-        { id: 'm2', name: 'Royal Lamb Raan',         desc: 'Slow-cooked leg of lamb, aromatic spices, saffron pilaf.', price: '₹ 1,240', img: '/images/signature-dishes/tressa-royal-lamb-raan.jpg' },
-        { id: 'm3', name: 'Chilli Garlic Starter',   desc: 'Crispy fritters with house-spiced red broth.', price: '₹ 640', img: '/images/signature-dishes/tressa-chilli-garlic-starter.jpg' },
-        { id: 'm4', name: 'Charcoal Kebabs',         desc: 'Smoked kebabs with brûlée-topped accompaniment.', price: '₹ 820', img: '/images/signature-dishes/tressa-charcoal-kebabs.jpg' },
-        { id: 'm5', name: 'Gold Leaf Kulfi',         desc: 'Saffron-pistachio kulfi, 24k gold leaf.', price: '₹ 480' },
-        { id: 'm6', name: 'Chocolate Soufflé',       desc: '70% dark chocolate, vanilla bean ice cream.', price: '₹ 520' }
+        { id: 'm2', name: 'Royal Lamb Raan', desc: 'Slow-cooked tandoori platter, charred tikka & seekh, mint chutney, kachumber.', price: '₹ 1,240', img: '/images/carousel/tressa-tandoori-platter.jpg' },
+        { id: 'm5', name: 'Gold Leaf Kulfi', desc: 'Warm gulab jamun on crisp vermicelli, saffron rabri, rose petals.', price: '₹ 480', img: '/images/carousel/tressa-gulab-jamun-rabri.jpg' },
+        { id: 'm6', name: 'Chocolate Soufflé', desc: '70% dark chocolate dome, watermelon pearls, raspberry coulis, mint.', price: '₹ 520', img: '/images/carousel/tressa-chocolate-dome.jpg' }
       ]
     },
     {
       id: 'rooftop', name: 'The Sky', items: [
-        { id: 'r1', name: 'Smoked Old Fashioned', desc: 'Bourbon, cherry wood smoke, demerara.', price: '₹ 740', img: '/images/signature-cocktail.jpg' },
-        { id: 'r2', name: 'Citrus Blossom',       desc: 'Tangy mocktail, edible flowers, chili salt rim.', price: '₹ 420', img: '/images/signature-mocktail.jpg' },
-        { id: 'r3', name: 'Gin Garden',           desc: 'Botanical gin, cucumber, elderflower, basil.', price: '₹ 680' },
-        { id: 'r4', name: 'Charred Paneer Tikka', desc: 'Hung curd, smoked chilies, mint chutney.', price: '₹ 540' },
-        { id: 'r5', name: 'Sky Platter',          desc: 'Chef’s selection of sliders, dips and crostini.', price: '₹ 990' },
-        { id: 'r6', name: 'Skyline Mezze',        desc: 'Hummus, muhammara, labneh, warm pita.', price: '₹ 620' }
+        { id: 'r3', name: 'Gin Garden', desc: 'Botanical matcha cooler, coconut-cream float, cocoa-rose dust.', price: '₹ 680', img: '/images/carousel/tressa-matcha-cocktail.jpg' },
+        { id: 'r5', name: 'Sky Platter', desc: 'Chef’s selection of bruschetta, smoked skewers, chilli bites and crostini.', price: '₹ 990', img: '/images/carousel/tressa-starters-platter.jpg' }
       ]
     },
     {
       id: 'bar', name: 'Bar', items: [
-        { id: 'b1', name: 'Tressa Negroni',       desc: 'House-infused gin, Campari, vermouth, orange oil.', price: '₹ 690' },
-        { id: 'b2', name: 'Barrel Aged Manhattan', desc: 'Rye whiskey, sweet vermouth, Angostura.', price: '₹ 820' },
-        { id: 'b3', name: 'Espresso Martini',     desc: 'Vodka, fresh espresso, coffee liqueur.', price: '₹ 640' },
-        { id: 'b4', name: 'Whisky Flight',        desc: 'Curated tasting of three single malts.', price: '₹ 1,900' },
-        { id: 'b5', name: 'Bar Bites Platter',    desc: 'Spiced nuts, olives, cured meats, cheese.', price: '₹ 780' },
-        { id: 'b6', name: 'Truffle Fries',        desc: 'Hand-cut potatoes, truffle oil, parmesan.', price: '₹ 440' }
+        { id: 'b3', name: 'Espresso Martini', desc: 'Classic dry martini, brined olives, citrus twist.', price: '₹ 640', img: '/images/carousel/tressa-classic-martini.jpg' }
       ]
     }
   ],
   gallery: [
-    { id: 'g1', src: '/images/sky/tressa-sky-rooftop-01.png',       alt: 'TRESSA Sky rooftop lounge — evening panorama in Pune' },
-    { id: 'g2', src: '/images/venues/soul/tressa-soul-02.webp',     alt: 'TRESSA Soul family restaurant — elegant interior in Pune' },
+    { id: 'g1', src: '/images/sky/tressa-sky-rooftop-01.png', alt: 'TRESSA Sky rooftop lounge — evening panorama in Pune' },
+    { id: 'g2', src: '/images/venues/soul/tressa-soul-02.webp', alt: 'TRESSA Soul family restaurant — elegant interior in Pune' },
     { id: 'g3', src: '/images/venues/unwind/tressa-unwind-02.webp', alt: 'TRESSA Unwind bar — signature cocktails and ambient lighting' },
-    { id: 'g4', src: '/images/venues/soul/tressa-soul-03.webp',     alt: 'TRESSA Soul — intimate dining moment' },
-    { id: 'g5', src: '/images/sky/tressa-sky-rooftop-02.png',       alt: 'TRESSA Sky rooftop — Pune skyline at golden hour' },
-    { id: 'g6', src: '/images/venues/soul/tressa-soul-04.webp',     alt: 'TRESSA Soul restaurant — table setting detail' },
+    { id: 'g4', src: '/images/venues/soul/tressa-soul-03.webp', alt: 'TRESSA Soul — intimate dining moment' },
+    { id: 'g5', src: '/images/sky/tressa-sky-rooftop-02.png', alt: 'TRESSA Sky rooftop — Pune skyline at golden hour' },
+    { id: 'g6', src: '/images/venues/soul/tressa-soul-04.webp', alt: 'TRESSA Soul restaurant — table setting detail' },
     { id: 'g7', src: '/images/venues/unwind/tressa-unwind-03.webp', alt: 'TRESSA Unwind bar — crafted evenings' },
-    { id: 'g8', src: '/images/sky/tressa-sky-rooftop-03.png',       alt: 'TRESSA Sky terrace seating under the stars' }
+    { id: 'g8', src: '/images/sky/tressa-sky-rooftop-03.png', alt: 'TRESSA Sky terrace seating under the stars' }
   ],
   marquee: ['The Sky', 'Family Restaurant', 'Signature Bar', 'Luxury Suites', 'Private Dining', 'Banquet Hall'],
   quote: {
@@ -209,27 +197,25 @@ export const DEFAULT_CONTENT: SiteContent = {
     captionLabel: 'Cinematic',
     captionTitle: 'An evening at Tressa is an experience composed frame by frame.',
     stats: [
-      { n: '12+',  l: 'Curated Experiences' },
-      { n: '4',    l: 'Signature Spaces' },
+      { n: '12+', l: 'Curated Experiences' },
+      { n: '4', l: 'Signature Spaces' },
       { n: '50K+', l: 'Happy Guests' },
       { n: '24/7', l: 'Concierge' }
     ]
   },
   footerHours: [
     { id: 'h1', label: 'Restaurant', value: '11:00 – 23:30' },
-    { id: 'h2', label: 'The Sky',    value: '17:00 – 01:00' },
-    { id: 'h3', label: 'Bar',        value: '18:00 – 01:00' },
-    { id: 'h4', label: 'Reception',  value: '24 / 7' }
+    { id: 'h2', label: 'The Sky', value: '17:00 – 01:00' },
+    { id: 'h3', label: 'Bar', value: '18:00 – 01:00' },
+    { id: 'h4', label: 'Reception', value: '24 / 7' }
   ],
   timeSlots: [
-    { id: 'lunch',  label: '12:00 PM – 3:00 PM',  start: '12:00', end: '15:00' },
-    { id: 'tea',    label: '3:00 PM – 5:00 PM',   start: '15:00', end: '17:00' },
-    { id: 'dinner', label: '5:00 PM – 8:00 PM',   start: '17:00', end: '20:00' },
-    { id: 'night',  label: '8:00 PM – 12:00 AM',  start: '20:00', end: '00:00' }
+    { id: 'evening', label: '3:00 PM – 7:00 PM', start: '15:00', end: '19:00' },
+    { id: 'late', label: '10:00 PM – 12:00 AM', start: '22:00', end: '23:45' }
   ],
   contact: {
-    phone: '+91 00000 00000',
-    email: 'hello@tressaworld.com',
+    phone: '+91 8600627270',
+    email: 'operationstressa@gmail.com',
     address: 'Tressa World Lane',
     city: 'Pune, India',
     instagram: 'https://instagram.com/tressaworld',

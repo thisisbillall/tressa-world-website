@@ -20,11 +20,11 @@ export const SITE = {
 
   business: {
     legalName: 'TRESSA Hospitality Pvt. Ltd.',
-    foundingDate: '2018-01-01',
-    phone: '+91-20-0000-0000',
-    phoneDisplay: '+91 20 0000 0000',
-    whatsapp: '+91-00000-00000',
-    email: 'hello@tressaworld.com',
+    foundingDate: '2026-02-01',
+    phone: '+91 8600627270',
+    phoneDisplay: '+91 8600627270',
+    whatsapp: '+91 8600627270',
+    email: 'operationstressa@gmail.com',
     reservationsEmail: 'reservations@tressaworld.com',
     priceRange: '₹₹₹',
     currency: 'INR',

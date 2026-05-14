@@ -1,7 +1,7 @@
 'use client';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef } from 'react';
-import TressaLink from './TressaLink';
+import Link from 'next/link';
 import { useSiteContent } from '@/lib/siteContent';
 
 export default function Hero() {
@@ -72,10 +72,10 @@ export default function Hero() {
           transition={{ duration: 1, delay: 3.1 }}
           className="flex flex-col sm:flex-row gap-4 justify-center items-center"
         >
-          {/* Booking CTA hidden — /booking redirection disabled site-wide */}
-          {/* <TressaLink href="/booking" className="btn-outline"><span>Reserve A Table</span></TressaLink> */}
-          {/* Aura Suites under development — hide CTA until launch */}
-          {/* <TressaLink href="/booking?venue=suites" className="btn-outline"><span>Book A Suite</span></TressaLink> */}
+          <Link href="/booking" className="btn-outline">
+            <span>BOOK NOW</span>
+          </Link>
+          {/* Aura Suites under development — CTA stays hidden until launch */}
         </motion.div>
       </motion.div>
 

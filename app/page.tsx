@@ -94,7 +94,7 @@ export default function Home() {
         {/* 3. What we offer */}
         <Spaces />
         {/* <VideoSection /> */}
-        {/* <Menu /> */}
+        <Menu />
 
         {/* 4. Atmosphere / moments */}
         <RooftopNight />

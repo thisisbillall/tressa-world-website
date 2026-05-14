@@ -4,9 +4,9 @@ import BookingClient from './BookingClient';
 import { SITE } from '@/lib/seo';
 import { breadcrumbSchema, faqSchema } from '@/lib/jsonld';
 
-const title = 'Book a Table or Luxury Suite in Pune — Live 3D Reservation';
+const title = 'Priority Booking at TRESSA Pune — 15% Off Bill, Rs. 99 Reservation';
 const description =
-  'Reserve a table at TRESSA Restaurant, Rooftop or Bar in Pune — or book a luxury suite — directly from our interactive 3D floor plan. Real-time availability, four daily time slots (12 PM – 12 AM), instant confirmation by email and SMS.';
+  'Reserve your Exclusive slot at TRESSA Soul, Sky or Unwind in Pune. Pick any 15-minute window between 3 PM and 11 PM, pay ₹99 (redeemed on the total bill at the venue) and get a QR + booking code. 15% OFF on the total bill (via Tressa Pay, better than Zomato or Swiggy) applies only for bookings in 3:00 PM – 7:00 PM or 10:00 PM – 11:00 PM (Exclusive).';
 
 export const metadata: Metadata = {
   title,
@@ -56,11 +56,11 @@ export const metadata: Metadata = {
 };
 
 const bookingFaqs = [
-  { q: 'What are the available time slots?', a: '12:00 PM – 3:00 PM, 3:00 PM – 5:00 PM, 5:00 PM – 8:00 PM, and 8:00 PM – 12:00 AM.' },
-  { q: 'Is the 3D booking page mobile friendly?', a: 'Yes. You can drag to orbit, pinch to zoom, and tap any table or suite to zoom in and reserve.' },
-  { q: 'Do I get instant confirmation?', a: 'Yes — every booking is confirmed instantly and a copy is sent to your email and phone.' },
-  { q: 'Can I cancel or modify my booking?', a: 'Yes. Use the cancellation link in your confirmation email or call our reservations desk. Cancellations up to 2 hours before your slot are free.' },
-  { q: 'Is there a booking fee?', a: 'No — reserving a table or suite online is completely free. You only pay for what you order on the day.' }
+  { q: 'What are the available booking times?', a: 'Pick any 15-minute time between 3:00 PM and 11:00 PM — for example 3:00, 3:15, 3:30, 3:45, 4:00, and so on.' },
+  { q: 'When does the 15% Tressa Pay discount apply?', a: 'Only when your booking time falls inside an Exclusive slot — 3:00 PM – 7:00 PM or 10:00 PM – 11:00 PM (endpoints included). 7:00 PM qualifies; 7:15 PM does not.' },
+  { q: 'How much is the booking fee?', a: '₹99 per reservation. The full ₹99 is redeemed on your total bill at the venue, so you pay nothing extra to reserve. The 15% discount only applies in Exclusive windows.' },
+  { q: 'What do I get in return?', a: 'A unique QR + booking code on SMS. Show it at the venue billing during an Exclusive slot to get 15% OFF on the total bill via Tressa Pay — better than Zomato or Swiggy. Your ₹99 booking amount is also redeemed against the bill.' },
+  { q: 'When does my QR expire?', a: 'It is valid up to 15 minutes after your booking time. Please arrive on time so the discount can be honored.' }
 ];
 
 export default function Page() {
@@ -108,7 +108,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <h1 className="sr-only">
-        Book a Table or Luxury Suite at TRESSA World Pune — Interactive 3D Reservation for Restaurant, Rooftop, Bar and Suites
+        TRESSA Priority Booking Pune — Rs. 99 reservation (redeemed on bill) for 15% OFF total bill at Soul, Sky and Unwind
       </h1>
       <Suspense fallback={null}>
         <BookingClient />

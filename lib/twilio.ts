@@ -11,7 +11,16 @@
 // formats its Twilio calls.
 
 import twilio from 'twilio';
-import { TIME_SLOTS } from './venueConfig';
+import {
+  BOOKING_DISCOUNT_PERCENT,
+  formatBookingTime,
+  isPriorityTime,
+} from './venueConfig';
+import { uploadBookingPdf, BookingPdfInput } from './bookingPdf';
+
+// Public origin used to build customer-facing links inside the SMS body.
+// Set NEXT_PUBLIC_SITE_URL in production (e.g. "https://tressaworld.com").
+const SITE_ORIGIN = (process.env.NEXT_PUBLIC_SITE_URL || 'https://tressaworld.com').replace(/\/$/, '');
 
 const SID = process.env.TWILIO_ACCOUNT_SID || '';
 const TOKEN = process.env.TWILIO_AUTH_TOKEN || '';
@@ -59,8 +68,13 @@ type BookingSmsInput = {
   suite_name?: string | null;
   check_in?: string | null;
   check_out?: string | null;
-  // Payment (only meaningful for suites — table reservations are free)
+  // Payment — flat ₹200 reservation for tables, per-night total for suites
   amount?: number | string | null;
+  // When the QR / discount code stops being honored at the venue
+  code_expires_at?: string | Date | null;
+  // Vercel Blob URL for the booking-slip PDF (preferred over the on-the-fly
+  // /api/booking-pdf route — falls back if missing).
+  pdf_url?: string | null;
 };
 
 // Claim-and-send: atomically marks sms_sent_at so two concurrent confirmation
@@ -73,13 +87,55 @@ export async function sendBookingConfirmationSmsOnce(bookingId: string, pool: {
     `UPDATE bookings
         SET sms_sent_at = NOW()
       WHERE id = $1 AND sms_sent_at IS NULL AND booking_code IS NOT NULL
-      RETURNING customer_name, customer_phone, booking_code, venue,
-                table_ref, reservation_date, reservation_time,
-                suite_name, check_in, check_out, amount`,
+      RETURNING id, customer_name, customer_phone, customer_email,
+                booking_code, venue,
+                table_ref, reservation_date, reservation_time, guests,
+                suite_name, check_in, check_out,
+                amount, code_expires_at, payment_status,
+                razorpay_order_id, razorpay_payment_id,
+                pdf_url, created_at`,
     [bookingId],
   );
   const b = rows[0];
   if (!b) return { claimed: false };
+
+  // Upload the booking-slip PDF to Vercel Blob if we haven't already. Best
+  // effort — if upload fails (token missing, network glitch) we still send
+  // SMS pointing at the on-the-fly /api/booking-pdf fallback.
+  let pdfUrl: string | null = b.pdf_url || null;
+  if (!pdfUrl) {
+    try {
+      const input: BookingPdfInput = {
+        id: b.id,
+        customer_name: b.customer_name,
+        customer_phone: b.customer_phone,
+        customer_email: b.customer_email,
+        venue: b.venue,
+        reservation_date: b.reservation_date
+          ? new Date(b.reservation_date).toISOString().slice(0, 10)
+          : null,
+        reservation_time: b.reservation_time,
+        guests: b.guests,
+        suite_name: b.suite_name,
+        check_in: b.check_in ? new Date(b.check_in).toISOString().slice(0, 10) : null,
+        check_out: b.check_out ? new Date(b.check_out).toISOString().slice(0, 10) : null,
+        booking_code: b.booking_code,
+        code_expires_at: b.code_expires_at,
+        amount: b.amount,
+        payment_status: b.payment_status,
+        razorpay_order_id: b.razorpay_order_id,
+        razorpay_payment_id: b.razorpay_payment_id,
+        created_at: b.created_at,
+      };
+      pdfUrl = await uploadBookingPdf(input);
+      await pool
+        .query(`UPDATE bookings SET pdf_url = $1 WHERE id = $2`, [pdfUrl, bookingId])
+        .catch(() => {});
+    } catch (e: any) {
+      console.warn('[twilio] pdf upload skipped:', e?.message || e);
+      pdfUrl = null;
+    }
+  }
 
   const body = buildBookingSmsBody({
     customer_name: b.customer_name,
@@ -94,6 +150,8 @@ export async function sendBookingConfirmationSmsOnce(bookingId: string, pool: {
     check_in: b.check_in ? new Date(b.check_in).toISOString().slice(0, 10) : null,
     check_out: b.check_out ? new Date(b.check_out).toISOString().slice(0, 10) : null,
     amount: b.amount,
+    code_expires_at: b.code_expires_at,
+    pdf_url: pdfUrl,
   });
 
   const res = await sendSms(b.customer_phone, body);
@@ -107,14 +165,21 @@ export async function sendBookingConfirmationSmsOnce(bookingId: string, pool: {
   return { claimed: true, sent: true };
 }
 
-// reservation_time may arrive as "17:00", "17:00:00", or a Date.toISOString.
-// Match it to a known slot's start and return the human label like
-// "5:00 PM – 8:00 PM". Falls back to the raw time when no slot matches.
-function formatSlotRange(time?: string | null): string {
+// reservation_time arrives as "HH:MM" or "HH:MM:SS" — render it as "3:15 PM".
+function formatHHMM(time?: string | null): string {
   if (!time) return '';
   const hhmm = time.length >= 5 ? time.slice(0, 5) : time;
-  const slot = TIME_SLOTS.find((s) => s.start === hhmm);
-  return slot?.label ?? hhmm;
+  return formatBookingTime(hhmm);
+}
+
+// Render a YYYY-MM-DD as "14 May 2026" — readable on a phone.
+function formatDatePretty(d?: string | null): string {
+  if (!d) return '';
+  try {
+    return new Date(d).toLocaleDateString('en-IN', {
+      day: 'numeric', month: 'short', year: 'numeric',
+    });
+  } catch { return d; }
 }
 
 // Render INR with grouping. Accepts numeric or numeric-string. Returns "" if
@@ -126,26 +191,72 @@ function formatINR(amount?: number | string | null): string {
   return `Rs.${Math.round(n).toLocaleString('en-IN')}`;
 }
 
+// Format an expiry Date in IST as "h:mm AM/PM".
+function formatExpiryIST(value?: string | Date | null): string {
+  if (!value) return '';
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleString('en-IN', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'Asia/Kolkata',
+  });
+}
+
+const VENUE_SMS_LABEL: Record<BookingSmsInput['venue'], string> = {
+  bar: 'Unwind (Bar)',
+  restaurant: 'Soul (Restaurant)',
+  rooftop: 'Sky (Rooftop)',
+  suite: 'Aura (Suite)',
+};
+
 export function buildBookingSmsBody(b: BookingSmsInput): string {
   const name = (b.customer_name || '').split(' ')[0] || 'there';
+  const isSuite = b.venue === 'suite';
+  const venueLabel = VENUE_SMS_LABEL[b.venue];
 
-  let detail: string;
-  if (b.venue === 'suite') {
-    detail = `${b.suite_name ?? 'Suite'} · ${b.check_in} to ${b.check_out}`;
+  const lines: string[] = [];
+  lines.push(`TRESSA — Hi ${name}, your booking is confirmed.`);
+  lines.push('');
+
+  let priority = false;
+  if (isSuite) {
+    lines.push(`${b.suite_name ?? venueLabel}`);
+    if (b.check_in && b.check_out) lines.push(`${b.check_in} → ${b.check_out}`);
   } else {
-    const timing = formatSlotRange(b.reservation_time) || b.reservation_time || '';
-    const t = timing ? ` at ${timing}` : '';
-    const label = b.table_ref ? ` (table ${b.table_ref})` : '';
-    detail = `${b.venue}${label} on ${b.reservation_date}${t}`;
+    const datePretty = formatDatePretty(b.reservation_date);
+    const timing = formatHHMM(b.reservation_time);
+    const parts = [venueLabel, datePretty, timing].filter(Boolean);
+    lines.push(parts.join(' · '));
+    priority = isPriorityTime(b.reservation_time ? b.reservation_time.slice(0, 5) : null);
   }
 
   const amt = formatINR(b.amount);
-  const amountLine = amt ? ` Prepaid: ${amt}.` : '';
+  if (amt) {
+    lines.push(isSuite ? `Prepaid: ${amt}` : `Reservation: ${amt} (redeemed on bill)`);
+  }
 
-  return (
-    `Hi ${name}, your TRESSA booking is confirmed. ${detail}.${amountLine} ` +
-    `Show code ${b.booking_code} at your visit for up to 15% OFF on the total bill ` +
-    `(applicable on F&B via Tressa Pay; see tressaworld.com/terms). ` +
-    `Thanks for choosing TRESSA.`
-  );
+  lines.push('');
+  lines.push(`Code: ${b.booking_code}`);
+  const expiryStr = !isSuite ? formatExpiryIST(b.code_expires_at) : '';
+  if (expiryStr) lines.push(`Valid till: ${expiryStr} IST`);
+
+  // Prefer the persisted Blob URL; otherwise the on-the-fly route still works.
+  const pdfUrl = b.pdf_url || `${SITE_ORIGIN}/api/booking-pdf/${encodeURIComponent(b.booking_code)}`;
+  lines.push(`Slip: ${pdfUrl}`);
+
+  if (!isSuite) {
+    lines.push('');
+    lines.push(
+      priority
+        ? `Exclusive slot — show QR at billing for ${BOOKING_DISCOUNT_PERCENT}% OFF via Tressa Pay.`
+        : `Premium slot — ${BOOKING_DISCOUNT_PERCENT}% discount applies only in Exclusive windows (3-7 PM, 10-11 PM).`,
+    );
+  }
+
+  lines.push('');
+  lines.push('Thanks for choosing TRESSA.');
+
+  return lines.join('\n');
 }
