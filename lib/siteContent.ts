@@ -217,7 +217,7 @@ export const DEFAULT_CONTENT: SiteContent = {
     email: 'operationstressa@gmail.com',
     address: 'Tressa Restaurant and Suites, Jarvari Rd, Pimple Saudagar, Pimpri-Chinchwad, Maharashtra 411027',
     city: 'Pune, India',
-    instagram: 'https://www.instagram.com/popular/tressa-restaurant/'
+    instagram: 'https://www.instagram.com/tressa.experience?igsh=MTNpMXFibHB4bm54aA=='
   },
   seoTitle: 'TRESSA World — Rooftop Lounge, Family Restaurant, Bar & Luxury Suites',
   seoDescription:
