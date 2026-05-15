@@ -445,8 +445,7 @@ function ContactPane({ content, update }: PP) {
       </div>
       <div className="grid md:grid-cols-3 gap-4">
         <Text label="Instagram URL" value={c.instagram} onChange={(v: string) => s({ instagram: v })} />
-        <Text label="Facebook URL"  value={c.facebook}  onChange={(v: string) => s({ facebook: v })} />
-        <Text label="Twitter URL"   value={c.twitter}   onChange={(v: string) => s({ twitter: v })} />
+        
       </div>
     </>
   );
