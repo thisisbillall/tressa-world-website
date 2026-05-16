@@ -57,7 +57,7 @@ export const SITE = {
       { days: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'], opens: '18:00', closes: '01:00', name: 'Bar' }
     ],
     social: [
-      'https://www.instagram.com/tressaworld',
+      'https://www.instagram.com/tressa.experience',
       'https://www.facebook.com/tressaworld',
       'https://twitter.com/tressaworld',
       'https://www.linkedin.com/company/tressaworld'

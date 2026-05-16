@@ -33,28 +33,28 @@ const VENUES: {
       apiVenue: 'restaurant',
       label: 'Soul',
       tag: 'Family Restaurant',
-      hero: { src: soul[0]?.src ?? '/Soul/DSC08024.JPG', alt: soul[0]?.alt ?? 'TRESSA Soul' },
+      hero: { src: soul[0]?.src ?? '', alt: soul[0]?.alt ?? 'TRESSA Soul' },
     },
     {
       id: 'rooftop',
       apiVenue: 'rooftop',
       label: 'Sky',
       tag: 'Rooftop Lounge',
-      hero: { src: sky[0]?.src ?? '/Sky/DSC08185.JPG', alt: sky[0]?.alt ?? 'TRESSA Sky' },
+      hero: { src: sky[0]?.src ?? '', alt: sky[0]?.alt ?? 'TRESSA Sky' },
     },
     {
       id: 'bar',
       apiVenue: 'bar',
       label: 'Unwind',
       tag: 'Signature Bar',
-      hero: { src: unwind[0]?.src ?? '/Unwind/DSC09753.JPG', alt: unwind[0]?.alt ?? 'TRESSA Unwind' },
+      hero: { src: unwind[0]?.src ?? '', alt: unwind[0]?.alt ?? 'TRESSA Unwind' },
     },
     {
       id: 'suites',
       apiVenue: 'suite',
       label: 'Aura',
       tag: 'Luxury Suites · Coming Soon',
-      hero: { src: '/Sky/DSC08230.JPG', alt: 'TRESSA Aura — Luxury Suites' },
+      hero: { src: sky[3]?.src ?? sky[0]?.src ?? '', alt: 'TRESSA Aura — Luxury Suites' },
       disabled: true,
       disabledReason: 'Aura suite booking opens soon. Stay tuned.',
     },
@@ -296,7 +296,7 @@ export default function BookingClient() {
 
             <div className="mt-5 flex flex-wrap gap-2 md:gap-3 max-w-md">
               <Badge dark icon={<BadgePercent size={14} />} title={`${BOOKING_DISCOUNT_PERCENT}% OFF total bill`} />
-              <Badge dark icon={<ShieldCheck size={14} />} title={`₹${BOOKING_FEE_INR} redeemed on total booking`} />
+              <Badge dark icon={<ShieldCheck size={14} />} title={`₹${BOOKING_FEE_INR} booking charge only`} />
             </div>
           </div>
         </motion.aside>
@@ -305,16 +305,16 @@ export default function BookingClient() {
         <section className="md:h-full md:overflow-y-auto px-5 md:px-12 py-8 md:py-12">
           <div className="max-w-3xl mx-auto">
             <p className="text-[10px] tracking-[0.5em] uppercase text-maroon mb-2">Reserve your time</p>
-            <h2 className="font-serif text-2xl md:text-3xl font-light text-ink">
-              One step. ₹{BOOKING_FEE_INR} reservation, {BOOKING_DISCOUNT_PERCENT}% OFF total bill.
+            <h2 className=" text-xl md:text-3xl font-light text-ink">
+              One step.  <span className="font-extrabold">₹{BOOKING_FEE_INR}</span> booking charge, <span className="font-extrabold">{BOOKING_DISCOUNT_PERCENT}% </span> OFF total bill.
             </h2>
             <p className="mt-2 text-sm text-muted">
               A Tressa-exclusive discount benefit beyond Zomato &amp; Swiggy.
               <span className="block mt-1 text-[11px]">
-                {BOOKING_DISCOUNT_PERCENT}% off applies only for bookings in {PRIORITY_WINDOWS.map((w) => w.label).join(' or ')}.
+                <span className="font-extrabold">{BOOKING_DISCOUNT_PERCENT}% </span>off applies only for bookings in {PRIORITY_WINDOWS.map((w) => w.label).join(' or ')}.
               </span>
               <span className="block mt-1 text-[11px] text-maroon">
-                Your ₹{BOOKING_FEE_INR} booking amount is redeemed against your total billing at the venue.
+                <span className="font-extrabold">₹{BOOKING_FEE_INR}</span> is the booking charge only — it is redeemed against your total billing at the venue.
               </span>
             </p>
 
@@ -337,6 +337,19 @@ export default function BookingClient() {
                 </button>
               ))}
             </div>
+
+            {/* Sky is the only venue with a cover charge, and it is billed at
+                the venue against the menu — not collected at booking time. */}
+            {venueId === 'rooftop' && !confirmed && (
+              <div className="mb-6 px-4 py-3 bg-gold/10 border-l-2 border-gold text-[11px] md:text-xs leading-relaxed text-maroon">
+                <strong className="block text-[10px] tracking-[0.25em] uppercase text-gold mb-1">
+                  Heads up · Sky cover charge
+                </strong>
+                A per-guest cover charge applies for Sky and is added to your
+                menu bill at the venue. The ₹{BOOKING_FEE_INR} here is the
+                booking charge only — nothing extra is charged now.
+              </div>
+            )}
 
             <AnimatePresence mode="wait">
               {confirmed ? (
@@ -519,7 +532,7 @@ export default function BookingClient() {
                       <a href="/terms" target="_blank" rel="noopener" className="text-maroon underline hover:text-gold">
                         Terms &amp; Refund Policy
                       </a>{' '}
-                      and acknowledge the ₹{BOOKING_FEE_INR} booking amount is redeemed on the total billing at the venue, and is non-refundable if the slot is not used.
+                      and acknowledge the ₹{BOOKING_FEE_INR} booking charge is redeemed on the total billing at the venue, and is non-refundable if the slot is not used. Sky bookings additionally have a cover charge that is billed with your menu at the venue.
                     </span>
                   </label>
 
@@ -537,7 +550,7 @@ export default function BookingClient() {
                     <span className="absolute inset-0 bg-gold translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
                     <span className="relative group-hover:text-maroon transition-colors flex items-center justify-center gap-2">
                       {sending && <Loader2 className="animate-spin" size={14} />}
-                      {sending ? 'Processing…' : `Pay ₹${BOOKING_FEE_INR} & Confirm`}
+                      {sending ? 'Processing…' : `Pay ₹${BOOKING_FEE_INR} Booking Charge & Confirm`}
                     </span>
                   </button>
                 </motion.form>

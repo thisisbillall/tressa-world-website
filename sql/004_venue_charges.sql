@@ -1,6 +1,9 @@
--- Per-venue cover charge. Booking total = price_per_person × guests.
--- Edit rows directly in the DB to change pricing — the booking form
--- auto-refreshes via SSE (NOTIFY trigger fires on any change).
+-- Per-venue cover charge. ONLY Sky (rooftop) has a cover charge — it is
+-- collected at the venue and added to the guest's menu bill, NOT collected
+-- at booking time. The ₹99 booking-charge (BOOKING_FEE_INR) is separate
+-- and is the only thing charged via Razorpay during reservation.
+--
+-- Soul (restaurant) and Unwind (bar) do not have a cover charge.
 --
 --   psql "$DATABASE_URL" -f sql/004_venue_charges.sql
 
@@ -22,9 +25,14 @@ CREATE TRIGGER trg_notify_venue_charges
   AFTER INSERT OR UPDATE OR DELETE ON venue_charges
   FOR EACH ROW EXECUTE FUNCTION notify_db_changes();
 
--- Seed. Tune these numbers to taste.
+-- Cleanup of any prior seeds where Soul / Unwind also carried a cover charge.
+DELETE FROM venue_charges WHERE venue IN ('bar', 'restaurant');
+
+-- Seed Sky only. Tune the amount as needed; this is the per-guest cover
+-- charge added to the menu bill at the venue, not collected at booking.
 INSERT INTO venue_charges (venue, price_per_person, description) VALUES
-  ('rooftop',    1000, 'Sky terrace cover charge per guest'),
-  ('bar',        750, 'Bar seating cover charge per guest'),
-  ('restaurant', 750, 'Restaurant seating reservation fee per guest')
-ON CONFLICT (venue) DO NOTHING;
+  ('rooftop', 1000, 'Sky cover charge per guest — added to your menu bill at the venue')
+ON CONFLICT (venue) DO UPDATE
+  SET price_per_person = EXCLUDED.price_per_person,
+      description      = EXCLUDED.description,
+      is_active        = TRUE;

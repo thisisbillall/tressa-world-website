@@ -54,9 +54,16 @@ export default function TermsPage() {
               terms. Aura · Luxury Suites are currently not bookable through this
               flow.
             </p>
+            <p>
+              The ₹{BOOKING_FEE_INR} is the <strong>booking charge only</strong>.
+              A separate per-guest <strong>cover charge applies for Sky
+              (Rooftop)</strong> and is added to your menu bill at the venue —
+              it is <strong>not</strong> collected at booking time. Soul and
+              Unwind do not have a cover charge.
+            </p>
           </Section>
 
-          <Section title="2. ₹99 reservation fee — redeemed on your total booking">
+          <Section title={`2. ₹${BOOKING_FEE_INR} booking charge — redeemed on your total booking`}>
             <p>
               When you arrive at the venue and use your slot, the full{' '}
               <strong>₹{BOOKING_FEE_INR} reservation fee is redeemed against your

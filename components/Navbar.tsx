@@ -64,7 +64,7 @@ export default function Navbar() {
       animate={isHome ? { y: 0, opacity: 1 } : { y: 0, opacity: 1 }}
       transition={
         isHome
-          ? { duration: 0.9, delay: 1.7, ease: [0.25, 0.46, 0.45, 0.94] }
+          ? { duration: 0.8, delay: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }
           : { duration: 0 }
       }
       className={`fixed top-0 left-0 right-0 z-50 ${

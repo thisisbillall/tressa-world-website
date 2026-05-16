@@ -1,33 +1,26 @@
 'use client';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { useRef } from 'react';
 import { useSiteContent } from '@/lib/siteContent';
 
 export default function Menu() {
   const [content] = useSiteContent();
   const items = content.menu.flatMap((c) => c.items);
 
-  const ref = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
-  const bgShift = useTransform(scrollYProgress, [0, 1], ['0%', '12%']);
-
   return (
     <section
-      ref={ref}
       id="menu"
       className="relative overflow-hidden bg-[#1a0810] text-cream py-20 md:py-30 px-5 sm:px-6 md:px-[8%]"
     >
-      {/* ambient blur orbs — same as MissionVision */}
-      <motion.div
+      {/* Static ambient glow — no scroll-bound transforms. blur-[120px] +
+          translateY per frame was a guaranteed framerate cliff on phones. */}
+      <div
         aria-hidden
-        style={{ y: bgShift }}
         className="pointer-events-none absolute inset-0 opacity-[0.08]"
       >
         <div className="absolute -top-20 -left-20 w-[520px] h-[520px] rounded-full bg-gold blur-[120px]" />
         <div className="absolute -bottom-20 -right-20 w-[520px] h-[520px] rounded-full bg-maroon blur-[120px]" />
-      </motion.div>
-      <div className="grain absolute inset-0 pointer-events-none" />
+      </div>
 
       {/* ----- Header ----- */}
       <motion.header
@@ -72,7 +65,7 @@ export default function Menu() {
                   src={item.img}
                   alt={item.name}
                   fill
-                  quality={95}
+                  quality={80}
                   sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   className="object-cover img-enhance transition-transform duration-[1100ms] ease-out group-hover:scale-[1.07]"
                 />

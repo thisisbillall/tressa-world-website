@@ -4,7 +4,7 @@ import BookingClient from './BookingClient';
 import { SITE } from '@/lib/seo';
 import { breadcrumbSchema, faqSchema } from '@/lib/jsonld';
 
-const title = 'Priority Booking at TRESSA Pune — 15% Off Bill, Rs. 99 Reservation';
+const title = 'Priority Booking at TRESSA Pune — 15% Off Bill, ₹99 Reservation';
 const description =
   'Reserve your Exclusive slot at TRESSA Soul, Sky or Unwind in Pune. Pick any 15-minute window between 3 PM and 11 PM, pay ₹99 (redeemed on your total billing at the venue) and get a QR + booking code. 15% OFF on the total bill (via Tressa Pay, better than Zomato or Swiggy) applies only for bookings in 3:00 PM – 7:00 PM or 10:00 PM – 11:00 PM (Exclusive).';
 
@@ -58,8 +58,9 @@ export const metadata: Metadata = {
 const bookingFaqs = [
   { q: 'What are the available booking times?', a: 'Pick any 15-minute time between 3:00 PM and 11:00 PM — for example 3:00, 3:15, 3:30, 3:45, 4:00, and so on.' },
   { q: 'When does the 15% Tressa Pay discount apply?', a: 'Only when your booking time falls inside an Exclusive slot — 3:00 PM – 7:00 PM or 10:00 PM – 11:00 PM (endpoints included). 7:00 PM qualifies; 7:15 PM does not.' },
-  { q: 'How much is the booking fee?', a: '₹99 per reservation. The full ₹99 is redeemed on your total billing at the venue, so you pay nothing extra to reserve. The 15% discount only applies in Exclusive windows.' },
-  { q: 'What do I get in return?', a: 'A unique QR + booking code on SMS. Show it at the venue billing during an Exclusive slot to get 15% OFF on the total bill via Tressa Pay — better than Zomato or Swiggy. Your ₹99 booking amount is also redeemed against your total booking.' },
+  { q: 'How much is the booking charge?', a: '₹99 per reservation, and this is the only thing you pay online to book. The full ₹99 is redeemed against your total billing at the venue, so you pay nothing extra to reserve. The 15% discount only applies in Exclusive windows.' },
+  { q: 'Is there a cover charge?', a: 'Only at Sky (rooftop). A per-guest cover charge applies for Sky and is added to your menu bill at the venue — it is not collected at booking time. Soul (restaurant) and Unwind (bar) have no cover charge.' },
+  { q: 'What do I get in return?', a: 'A unique QR + booking code on SMS. Show it at the venue billing during an Exclusive slot to get 15% OFF on the total bill via Tressa Pay — better than Zomato or Swiggy. Your ₹99 booking charge is also redeemed against your total booking.' },
   { q: 'When does my QR expire?', a: 'It is valid up to 15 minutes after your booking time. Please arrive on time so the discount can be honored.' }
 ];
 
@@ -108,7 +109,7 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <h1 className="sr-only">
-        TRESSA Priority Booking Pune — Rs. 99 reservation (redeemed on total booking) for 15% OFF total bill at Soul, Sky and Unwind
+        TRESSA Priority Booking Pune — <span className="font-bold">₹99</span> reservation (redeemed on total booking) for 15% OFF total bill at Soul, Sky and Unwind
       </h1>
       <Suspense fallback={null}>
         <BookingClient />

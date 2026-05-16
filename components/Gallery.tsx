@@ -1,17 +1,28 @@
 'use client';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform, useReducedMotion } from 'framer-motion';
 import Image from 'next/image';
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSiteContent } from '@/lib/siteContent';
 
 export default function Gallery() {
   const [content] = useSiteContent();
   const images = content.gallery;
 
+  // Horizontal parallax is the heaviest scroll-bound transform on the page
+  // — two lanes, animating x over the whole viewport scroll. Skip it on
+  // touch devices and when the user has reduced-motion set.
+  const reduceMotion = useReducedMotion();
+  const [enableParallax, setEnableParallax] = useState(false);
+  useEffect(() => {
+    if (reduceMotion) return;
+    const isTouch = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+    if (!isTouch) setEnableParallax(true);
+  }, [reduceMotion]);
+
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
-  const xLeft  = useTransform(scrollYProgress, [0, 1], ['0%', '-15%']);
-  const xRight = useTransform(scrollYProgress, [0, 1], ['0%', '15%']);
+  const xLeft  = useTransform(scrollYProgress, [0, 1], enableParallax ? ['0%', '-15%'] : ['0%', '0%']);
+  const xRight = useTransform(scrollYProgress, [0, 1], enableParallax ? ['0%', '15%'] : ['0%', '0%']);
 
   if (!images.length) return null;
 
@@ -46,7 +57,7 @@ export default function Gallery() {
               }`}
             >
               {img.src && (
-                <Image src={img.src} alt={img.alt} fill quality={95} sizes="(max-width: 768px) 55vw, 38vw" className="object-cover img-enhance transition-transform duration-700 group-hover:scale-105" />
+                <Image src={img.src} alt={img.alt} fill quality={80} sizes="(max-width: 768px) 55vw, 38vw" className="object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
               )}
             </motion.div>
           ))}
@@ -65,7 +76,7 @@ export default function Gallery() {
               }`}
             >
               {img.src && (
-                <Image src={img.src} alt={img.alt} fill quality={95} sizes="(max-width: 768px) 55vw, 36vw" className="object-cover img-enhance transition-transform duration-700 group-hover:scale-105" />
+                <Image src={img.src} alt={img.alt} fill quality={80} sizes="(max-width: 768px) 55vw, 36vw" className="object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
               )}
             </motion.div>
           ))}

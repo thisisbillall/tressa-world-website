@@ -37,8 +37,8 @@ export default function Spaces() {
               src={s.img}
               alt={s.alt}
               fill
-              quality={95}
-              priority={i < 2}
+              quality={80}
+              priority={i === 0}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
               className="object-cover img-enhance transition-transform duration-[900ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:scale-110"
             />

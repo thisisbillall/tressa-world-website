@@ -20,14 +20,14 @@ html.lenis, html.lenis body { height: auto; }
 
 ::selection { background: var(--maroon); color: var(--cream); }
 
-img {
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
-}
+/* `image-rendering: crisp-edges` was making the browser fight next/image's
+   natural downscaling and caused extra paints. Let the browser pick. */
 
-.img-enhance {
-  filter: contrast(1.06) saturate(1.08) brightness(1.02);
-}
+/* `.img-enhance` used to layer a filter (contrast/saturate/brightness) on top
+   of hover transforms — combining `filter` with `transform` forces a
+   composite repaint every frame of the transition. Drop the filter; keep
+   the class so existing markup is harmless. */
+.img-enhance { /* no-op kept for backwards compatibility */ }
 
 /* custom scrollbar */
 ::-webkit-scrollbar { width: 8px; height: 0; }

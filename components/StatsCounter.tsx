@@ -10,27 +10,31 @@ const stats = [
 ];
 
 export default function StatsCounter() {
+  const sectionRef = useRef<HTMLElement>(null);
+  // Only animate the blurred orbs while the section is on screen — they were
+  // compositing huge blur-3xl quads every frame even when scrolled away,
+  // burning the GPU for no visible benefit.
+  const orbsInView = useInView(sectionRef, { amount: 0.05 });
+
   return (
-    <section className="relative py-20 md:py-32 px-5 sm:px-6 md:px-[8%] overflow-hidden bg-maroon">
+    <section ref={sectionRef} className="relative py-20 md:py-32 px-5 sm:px-6 md:px-[8%] overflow-hidden bg-maroon">
       <div className="absolute inset-0 bg-gradient-to-br from-maroon via-maroon-dark to-forest" />
       <div className="absolute inset-0 grain opacity-40 pointer-events-none" />
 
-      {/* Floating gold orbs */}
-      {[...Array(6)].map((_, i) => (
+      {/* Floating gold orbs — cut from 6 to 3 and paused off-screen */}
+      {[...Array(3)].map((_, i) => (
         <motion.div
           key={i}
           className="absolute rounded-full bg-gold/10 blur-3xl pointer-events-none"
           style={{
             width: 200 + (i % 3) * 80,
             height: 200 + (i % 3) * 80,
-            left: `${(i * 17) % 90}%`,
-            top: `${(i * 31) % 80}%`,
+            left: `${(i * 27) % 90}%`,
+            top: `${(i * 41) % 80}%`,
+            willChange: orbsInView ? 'transform' : 'auto',
           }}
-          animate={{
-            x: [0, 40, -30, 0],
-            y: [0, -30, 20, 0],
-          }}
-          transition={{ duration: 12 + i * 2, repeat: Infinity, ease: 'easeInOut' }}
+          animate={orbsInView ? { x: [0, 40, -30, 0], y: [0, -30, 20, 0] } : { x: 0, y: 0 }}
+          transition={{ duration: 14 + i * 2, repeat: orbsInView ? Infinity : 0, ease: 'easeInOut' }}
         />
       ))}
 

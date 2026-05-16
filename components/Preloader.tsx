@@ -5,8 +5,20 @@ import { useEffect, useState } from 'react';
 export default function Preloader() {
   const [done, setDone] = useState(false);
   useEffect(() => {
-    const t = setTimeout(() => setDone(true), 1700);
-    return () => clearTimeout(t);
+    // Tie dismissal to actual document readiness when possible, with a short
+    // hard cap so we never block the user behind the splash for >800ms even
+    // if a stray asset hangs.
+    const dismiss = () => setDone(true);
+    const cap = setTimeout(dismiss, 800);
+    if (document.readyState === 'complete') {
+      dismiss();
+    } else {
+      window.addEventListener('load', dismiss, { once: true });
+    }
+    return () => {
+      clearTimeout(cap);
+      window.removeEventListener('load', dismiss);
+    };
   }, []);
   return (
     <AnimatePresence>

@@ -34,7 +34,7 @@ export default function Suites() {
               src={s.img}
               alt={s.alt}
               fill
-              quality={95}
+              quality={80}
               sizes="(max-width: 1024px) 100vw, 33vw"
               className="object-cover img-enhance transition-transform duration-700 group-hover:scale-105"
             />

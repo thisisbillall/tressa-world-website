@@ -13,7 +13,6 @@ export default function MissionVision() {
     target: ref,
     offset: ['start end', 'end start']
   });
-  const bgShift = useTransform(scrollYProgress, [0, 1], ['0%', '12%']);
   const markerY = useTransform(scrollYProgress, [0, 1], [40, -40]);
 
   return (
@@ -22,15 +21,16 @@ export default function MissionVision() {
       id="mission-vision"
       className="relative overflow-hidden bg-[#1a0810] text-cream py-20 md:py-30 px-6 md:px-[8%]"
     >
-      <motion.div
+      {/* Static ambient glow — no parallax. Animating `transform` on a
+          blur-[120px] element forces the compositor to re-blur every frame,
+          which was tanking framerate on mid phones. */}
+      <div
         aria-hidden
-        style={{ y: bgShift }}
         className="pointer-events-none absolute inset-0 opacity-[0.08]"
       >
         <div className="absolute -top-20 -left-20 w-[520px] h-[520px] rounded-full bg-gold blur-[120px]" />
         <div className="absolute -bottom-20 -right-20 w-[520px] h-[520px] rounded-full bg-maroon blur-[120px]" />
-      </motion.div>
-      <div className="grain absolute inset-0 pointer-events-none" />
+      </div>
 
       <motion.header
         initial={{ opacity: 0, y: 30 }}

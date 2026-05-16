@@ -265,12 +265,14 @@ export function faqSchema(faqs: { q: string; a: string }[]) {
 }
 
 export const DEFAULT_FAQS = [
-  { q: 'How do I book a table at TRESSA?', a: 'Use the Book page to pick your venue (Restaurant, Rooftop or Bar), choose a time slot between 12 PM and midnight, select an available table from the interactive 3D floor plan and confirm with your contact details.' },
-  { q: 'What time slots are available for table reservations?', a: 'Four slots are offered every day: 12:00 PM – 3:00 PM, 3:00 PM – 5:00 PM, 5:00 PM – 8:00 PM and 8:00 PM – 12:00 AM.' },
-  { q: 'Can I book a luxury suite online?', a: 'Yes. Switch to the Suites tab on the Book page, pick your suite and enter your check-in and check-out dates for instant confirmation.' },
+  { q: 'How do I book a table at TRESSA?', a: 'Use the Book page to pick your venue (Soul · Restaurant, Sky · Rooftop, or Unwind · Bar), choose any 15-minute time between 3:00 PM and 11:00 PM, and confirm with your contact details. You pay a flat ₹99 booking charge online and receive a QR + booking code by SMS.' },
+  { q: 'What time slots are available for table reservations?', a: 'Pick any 15-minute time between 3:00 PM and 11:00 PM. Exclusive priority windows (3:00 PM – 7:00 PM and 10:00 PM – 11:00 PM) unlock 15% off the total bill via Tressa Pay; other times are Premium and reserve the slot at the same ₹99 booking charge.' },
+  { q: 'How much is the booking charge?', a: '₹99 per reservation — the only thing you pay online to book. The full ₹99 is redeemed against your total billing at the venue, so you pay nothing extra to reserve.' },
+  { q: 'Is there a cover charge?', a: 'Only at Sky (Rooftop). A per-guest cover charge applies at Sky and is added to your menu bill at the venue — it is not collected at booking time. Soul (Restaurant) and Unwind (Bar) have no cover charge.' },
+  { q: 'Can I book a luxury suite online?', a: 'Aura · Luxury Suites are currently under development. Suite bookings will open soon — meanwhile, dining, rooftop and bar reservations are live.' },
   { q: 'Where is TRESSA World located?', a: `${SITE.name} is located at ${fullAddress()}.` },
-  { q: 'Do you host private events or banquets?', a: 'Yes. We host private dining, corporate events, weddings and banquet bookings. Get in touch through our contact page or call our reservations team for a tailored proposal.' },
-  { q: 'Is TRESSA World family friendly?', a: 'Absolutely. Our family restaurant is designed for guests of all ages, with a dedicated kids menu, high chairs and a warm, welcoming atmosphere.' },
+  { q: 'Do you host private events or banquets?', a: 'Yes. We host private dining, corporate events, weddings and banquet bookings. Get in touch through our contact details or call our reservations team for a tailored proposal.' },
+  { q: 'Is TRESSA World family friendly?', a: 'Absolutely. Soul, our family restaurant, is designed for guests of all ages, with a dedicated kids menu, high chairs and a warm, welcoming atmosphere.' },
   { q: 'Do you have vegetarian and vegan options?', a: 'Yes — the menu features an extensive selection of vegetarian, vegan and gluten-free dishes across Indian, Continental, Pan-Asian and Mediterranean cuisines.' }
 ];
 

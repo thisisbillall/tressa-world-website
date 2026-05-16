@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { queryOne } from '@/lib/db';
@@ -10,6 +11,14 @@ import {
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+// Per-customer confirmation page — contains booking PII and a one-shot code.
+// Never index it: any crawler-cached copy is both useless (codes expire) and
+// a privacy risk.
+export const metadata: Metadata = {
+  title: 'Booking Confirmation',
+  robots: { index: false, follow: false, nocache: true, noarchive: true, nosnippet: true },
+};
 
 type BookingRow = {
   id: string;

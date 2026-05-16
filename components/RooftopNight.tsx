@@ -89,7 +89,7 @@ export default function RooftopNight() {
                 placeholder="blur"
                 blurDataURL={sky[0].blurDataURL}
                 className="object-cover"
-                priority
+                loading="lazy"
               />
               <div className="absolute inset-0 bg-gradient-to-tr from-[#10060a]/80 via-transparent to-transparent" />
 
