@@ -16,10 +16,14 @@ export default function manifest(): MetadataRoute.Manifest {
     dir: 'ltr',
     lang: 'en-IN',
     categories: ['food', 'lifestyle', 'travel', 'business'],
+    // Declaring the same square icon as both `any` AND `maskable` makes
+    // Chrome shrink the visible area to its 80% safe zone — that's what
+    // produced the "small logo with padding" look. Keep it as `any` only;
+    // adding a true maskable icon would require a separate file with 20%
+    // padding baked in.
     icons: [
       { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
       { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-      { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
       { src: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png', purpose: 'any' }
     ],
     shortcuts: [
