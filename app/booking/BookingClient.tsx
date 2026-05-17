@@ -36,18 +36,21 @@ const VENUES: {
       hero: { src: soul[0]?.src ?? '', alt: soul[0]?.alt ?? 'TRESSA Soul' },
     },
     {
-      id: 'rooftop',
-      apiVenue: 'rooftop',
-      label: 'Sky',
-      tag: 'Rooftop Lounge',
-      hero: { src: sky[0]?.src ?? '', alt: sky[0]?.alt ?? 'TRESSA Sky' },
-    },
-    {
       id: 'bar',
       apiVenue: 'bar',
       label: 'Unwind',
       tag: 'Signature Bar',
       hero: { src: unwind[0]?.src ?? '', alt: unwind[0]?.alt ?? 'TRESSA Unwind' },
+    },
+    
+    {
+      id: 'rooftop',
+      apiVenue: 'rooftop',
+      label: 'Sky',
+      tag: 'Rooftop Lounge · Temporarily Closed',
+      disabled: true,
+      disabledReason: 'Sky is temporarily closed. Please check back soon.',
+      hero: { src: sky[0]?.src ?? '', alt: sky[0]?.alt ?? 'TRESSA Sky' },
     },
     {
       id: 'suites',
@@ -333,23 +336,10 @@ export default function BookingClient() {
                     }`}
                 >
                   {v.label}
-                  {v.disabled && <span className="ml-2 text-[8px] opacity-70">soon</span>}
+                  {v.disabled && (v.label === "Sky" ? <span className="ml-2 text-[8px] opacity-70">Open Soon</span>: <span className="ml-2 text-[8px] opacity-70">soon</span>)}
                 </button>
               ))}
             </div>
-
-            {/* Sky is the only venue with a cover charge, and it is billed at
-                the venue against the menu — not collected at booking time. */}
-            {venueId === 'rooftop' && !confirmed && (
-              <div className="mb-6 px-4 py-3 bg-gold/10 border-l-2 border-gold text-[11px] md:text-xs leading-relaxed text-maroon">
-                <strong className="block text-[10px] tracking-[0.25em] uppercase text-gold mb-1">
-                  Heads up · Sky cover charge
-                </strong>
-                A per-guest cover charge applies for Sky and is added to your
-                menu bill at the venue. The ₹{BOOKING_FEE_INR} here is the
-                booking charge only — nothing extra is charged now.
-              </div>
-            )}
 
             <AnimatePresence mode="wait">
               {confirmed ? (
