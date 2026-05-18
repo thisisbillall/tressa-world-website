@@ -7,6 +7,7 @@ import { put } from '@vercel/blob';
 import {
   BOOKING_CODE_GRACE_MIN,
   BOOKING_DISCOUNT_PERCENT,
+  computeCodeWindow,
   formatBookingTime,
   isPriorityTime,
   PRIORITY_WINDOWS,
@@ -220,29 +221,36 @@ export async function buildBookingPdf(b: BookingPdfInput): Promise<Uint8Array> {
     x: qrX + (qrSize - codeSize) / 2, y: qrY - 42, size: 17, font: serifBold, color: MAROON,
   });
 
-  // Expiry callout under the QR — must be visually loud since arriving past
-  // this window forfeits the discount.
+  // Active-window callout under the QR — must be visually loud since arriving
+  // before the start or after the end forfeits the discount.
   const expireBoxH = 28;
   page.drawRectangle({
     x: qrX - 6, y: qrY - 42 - 8 - expireBoxH, width: qrSize + 12, height: expireBoxH,
     color: rgb(0.99, 0.92, 0.92),
     borderColor: rgb(0.78, 0.18, 0.18), borderWidth: 0.8,
   });
-  const expiresHeadline = `EXPIRES ${BOOKING_CODE_GRACE_MIN} MIN AFTER BOOKING TIME`;
+  const expiresHeadline = `VALID FOR ${BOOKING_CODE_GRACE_MIN} MIN FROM BOOKING TIME`;
   const eh = sansBold.widthOfTextAtSize(expiresHeadline, 8);
   page.drawText(expiresHeadline, {
     x: qrX + (qrSize - eh) / 2,
     y: qrY - 42 - 8 - expireBoxH + 16,
     size: 8, font: sansBold, color: rgb(0.62, 0.1, 0.1),
   });
-  if (!isSuite && b.code_expires_at) {
-    const expSub = `Not honored after ${fmtDateTime(b.code_expires_at)} IST`;
-    const ew = sans.widthOfTextAtSize(expSub, 7);
-    page.drawText(expSub, {
-      x: qrX + (qrSize - ew) / 2,
-      y: qrY - 42 - 8 - expireBoxH + 5,
-      size: 7, font: sans, color: rgb(0.4, 0.1, 0.1),
-    });
+  if (!isSuite) {
+    const { validFrom, validUntil } = computeCodeWindow(
+      b.reservation_date,
+      reservationHHMM,
+      BOOKING_CODE_GRACE_MIN,
+    );
+    if (validFrom && validUntil) {
+      const expSub = `${fmtDateTime(validFrom)} – ${fmtDateTime(validUntil)} IST`;
+      const ew = sans.widthOfTextAtSize(expSub, 7);
+      page.drawText(expSub, {
+        x: qrX + (qrSize - ew) / 2,
+        y: qrY - 42 - 8 - expireBoxH + 5,
+        size: 7, font: sans, color: rgb(0.4, 0.1, 0.1),
+      });
+    }
   }
 
   // --- Payment box --------------------------------------------------------
@@ -259,8 +267,18 @@ export async function buildBookingPdf(b: BookingPdfInput): Promise<Uint8Array> {
     { label: 'Razorpay Payment ID', value: b.razorpay_payment_id || '—' },
     { label: 'Razorpay Order ID', value: b.razorpay_order_id || '—' },
     {
-      label: `Validity (${BOOKING_CODE_GRACE_MIN} min after booking time)`,
-      value: b.code_expires_at ? `${fmtDateTime(b.code_expires_at)} IST` : 'See booking time',
+      label: `Validity (${BOOKING_CODE_GRACE_MIN}-min window from booking time)`,
+      value: (() => {
+        if (isSuite) return 'See check-in';
+        const { validFrom, validUntil } = computeCodeWindow(
+          b.reservation_date,
+          reservationHHMM,
+          BOOKING_CODE_GRACE_MIN,
+        );
+        return validFrom && validUntil
+          ? `${fmtDateTime(validFrom)} – ${fmtDateTime(validUntil)} IST`
+          : 'See booking time';
+      })(),
     },
   ];
 

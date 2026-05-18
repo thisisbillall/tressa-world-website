@@ -6,9 +6,15 @@ import {
   BOOKING_END_HHMM,
   BOOKING_START_HHMM,
   BOOKING_STEP_MIN,
+  computeCodeWindow as _computeCodeWindow,
+  computeReservationStart as _computeReservationStart,
   isValidBookingTime,
 } from './venueConfig';
 import { isValidBookingTimeFor, type BookingConfig } from './bookingConfig';
+
+// Re-export for callers that still pull these from lib/bookings.
+export const computeReservationStart = _computeReservationStart;
+export const computeCodeWindow = _computeCodeWindow;
 
 export type VenueChargeRow = {
   venue: string;
@@ -64,28 +70,16 @@ export function findTableSeats(_venue: VenueKey, _tableRef?: string | null): num
 }
 
 // Combine reservation date + HH:MM time into a UTC timestamp + grace window.
-// IST is UTC+5:30 — encoded directly in the ISO string so the server's local
-// timezone doesn't shift the result. '24:00' is normalised to 00:00 of the
-// following day (midnight at the end of the reservation date). graceMin lets
-// the caller override the default with the venue's configured grace.
+// graceMin lets the caller override the default with the venue's configured
+// grace. Returned Date is reservation start + graceMin minutes.
 export function computeCodeExpiry(
   reservationDate: string,
   hhmm: string,
   graceMin: number = BOOKING_CODE_GRACE_MIN,
 ): Date | null {
-  if (!hhmm || hhmm.length < 5) return null;
-  let dateStr = reservationDate;
-  let timeStr = hhmm.slice(0, 5);
-  if (timeStr === '24:00') {
-    const [y, mo, d] = reservationDate.split('-').map(Number);
-    if (!y || !mo || !d) return null;
-    const next = new Date(Date.UTC(y, mo - 1, d + 1));
-    dateStr = next.toISOString().slice(0, 10);
-    timeStr = '00:00';
-  }
-  const ist = new Date(`${dateStr}T${timeStr}:00+05:30`);
-  if (Number.isNaN(ist.getTime())) return null;
-  return new Date(ist.getTime() + graceMin * 60_000);
+  const start = _computeReservationStart(reservationDate, hhmm);
+  if (!start) return null;
+  return new Date(start.getTime() + graceMin * 60_000);
 }
 
 export function nightsBetween(checkIn: string, checkOut: string): number {

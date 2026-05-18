@@ -280,10 +280,14 @@ export async function POST(req: NextRequest) {
     } else {
       mark('free booking, skipping razorpay');
       // Free bookings never hit razorpay/verify, so confirmation-SMS fires now.
-      // Fire-and-forget: we don't want a Twilio hiccup to hold up the response.
-      sendBookingConfirmationSmsOnce(booking.id, pool)
-        .then((r) => mark(`sms free-booking claimed=${r.claimed} sent=${r.sent ?? false}`))
-        .catch((e) => console.error('[bookings POST] sms error:', e));
+      // Awaited: on Vercel/serverless, fire-and-forget Twilio calls are killed
+      // when the response is sent, and the SMS never goes out.
+      try {
+        const r = await sendBookingConfirmationSmsOnce(booking.id, pool);
+        mark(`sms free-booking claimed=${r.claimed} sent=${r.sent ?? false}${r.error ? ` error=${r.error}` : ''}`);
+      } catch (e) {
+        console.error('[bookings POST] sms error:', e);
+      }
     }
 
     return NextResponse.json({

@@ -6,8 +6,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, CalendarDays, ChevronDown, Clock, Users, Loader2, ShieldCheck, BadgePercent } from 'lucide-react';
 import {
+  BOOKING_CODE_GRACE_MIN,
   BOOKING_DISCOUNT_PERCENT,
   BOOKING_FEE_INR,
+  codeWindowFromExpiry,
   isPriorityTime,
   listBookingTimes,
   PRIORITY_WINDOWS,
@@ -113,6 +115,8 @@ type ConfirmedBooking = {
   booking_code: string;
   code_expires_at: string | null;
   reservation_time: string | null;
+  reservation_date: string | null;
+  venue: 'bar' | 'restaurant' | 'rooftop' | 'suite';
 };
 
 export default function BookingClient() {
@@ -273,6 +277,8 @@ export default function BookingClient() {
           booking_code: booking.booking_code,
           code_expires_at: booking.code_expires_at,
           reservation_time: booking.reservation_time,
+          reservation_date: booking.reservation_date,
+          venue: booking.venue,
         });
         setSending(false);
         return;
@@ -340,6 +346,8 @@ export default function BookingClient() {
               booking_code: vj.data.booking_code,
               code_expires_at: vj.data.code_expires_at,
               reservation_time: vj.data.reservation_time,
+              reservation_date: vj.data.reservation_date,
+              venue: vj.data.venue,
             });
           } catch (err: any) {
             setErrorMsg(err?.message || 'Payment verification failed.');
@@ -360,6 +368,33 @@ export default function BookingClient() {
   const confirmedPriority = cfg
     ? isPriorityTimeFor(cfg, confirmed?.reservation_time?.slice(0, 5))
     : isPriorityTime(confirmed?.reservation_time?.slice(0, 5));
+
+  const confirmedIsSuite = confirmed?.venue === 'suite';
+  const confirmedGrace = cfg?.code_grace_min ?? BOOKING_CODE_GRACE_MIN;
+  // Use the canonical code_expires_at returned by the API — derived in UTC,
+  // immune to local-timezone date parsing surprises.
+  const confirmedWindow = !confirmedIsSuite
+    ? codeWindowFromExpiry(confirmed?.code_expires_at ?? null, confirmedGrace)
+    : { validFrom: null, validUntil: null };
+
+  const [nowMs, setNowMs] = useState<number>(() => Date.now());
+  useEffect(() => {
+    if (!confirmed || confirmedIsSuite || !confirmedWindow.validFrom) return;
+    const tick = () => setNowMs(Date.now());
+    tick();
+    const id = setInterval(tick, 30_000);
+    return () => clearInterval(id);
+  }, [confirmed, confirmedIsSuite, confirmedWindow.validFrom]);
+
+  const confirmedNotYetActive =
+    !confirmedIsSuite &&
+    confirmedWindow.validFrom != null &&
+    nowMs < confirmedWindow.validFrom.getTime();
+  const confirmedExpired =
+    !confirmedIsSuite &&
+    confirmedWindow.validUntil != null &&
+    nowMs >= confirmedWindow.validUntil.getTime();
+  const confirmedActive = !confirmedIsSuite && !confirmedNotYetActive && !confirmedExpired;
 
   return (
     <main className="min-h-screen bg-[#fdf8ea] text-ink md:h-screen md:overflow-hidden">
@@ -463,17 +498,42 @@ export default function BookingClient() {
                   </p>
 
                   <div className="mt-6 bg-cream/40 border border-maroon/10 p-4">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={`/api/qr/${encodeURIComponent(confirmed.booking_code)}?size=320`}
-                      alt={`QR for ${confirmed.booking_code}`}
-                      width={240}
-                      height={240}
-                      className="mx-auto block w-[220px] h-[220px]"
-                    />
-                    <p className="mt-3 font-mono text-xl tracking-[0.25em] text-maroon">
-                      {confirmed.booking_code}
-                    </p>
+                    {confirmedExpired ? (
+                      <div className="bg-red-50 border border-red-200 px-4 py-5 text-red-700 text-sm">
+                        This QR has expired. It was valid for {BOOKING_CODE_GRACE_MIN} minutes from your booking time.
+                      </div>
+                    ) : confirmedNotYetActive && confirmedWindow.validFrom ? (
+                      <div className="bg-white border border-gold/40 px-4 py-5 text-maroon text-sm">
+                        <p className="text-[10px] tracking-[0.3em] uppercase text-maroon/80 mb-1">QR activates at</p>
+                        <p className="font-serif text-xl">
+                          {confirmedWindow.validFrom.toLocaleString('en-IN', {
+                            day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true,
+                            timeZone: 'Asia/Kolkata',
+                          })}
+                        </p>
+                        <p className="mt-1 text-[11px] text-muted">
+                          Valid for {BOOKING_CODE_GRACE_MIN} minutes from that time.
+                        </p>
+                      </div>
+                    ) : (confirmedIsSuite || confirmedActive) ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={`/api/qr/${encodeURIComponent(confirmed.booking_code)}?size=320`}
+                        alt={`QR for ${confirmed.booking_code}`}
+                        width={240}
+                        height={240}
+                        className="mx-auto block w-[220px] h-[220px]"
+                      />
+                    ) : null}
+                    {(confirmedIsSuite || confirmedActive) ? (
+                      <p className="mt-3 font-mono text-xl tracking-[0.25em] text-maroon">
+                        {confirmed.booking_code}
+                      </p>
+                    ) : (
+                      <p className="mt-3 font-mono text-xl tracking-[0.25em] text-muted/40 line-through select-none">
+                        {'•'.repeat(confirmed.booking_code.length)}
+                      </p>
+                    )}
                     {confirmedPriority ? (
                       <p className="mt-2 text-[11px] text-muted">
                         Show this QR / code at the venue for{' '}
@@ -484,11 +544,20 @@ export default function BookingClient() {
                         Your Premium slot is reserved. The {discount}% bill discount is not applicable for this time.
                       </p>
                     )}
-                    {confirmed.code_expires_at && (
-                      <p className="mt-1 text-[10px] tracking-[0.25em] uppercase text-muted">
-                        Valid till{' '}
-                        {new Date(confirmed.code_expires_at).toLocaleString('en-IN', {
+                    {confirmedWindow.validFrom && confirmedWindow.validUntil && (
+                      <p
+                        className={`mt-1 text-[10px] tracking-[0.25em] uppercase ${
+                          confirmedExpired ? 'text-red-600' : 'text-muted'
+                        }`}
+                      >
+                        {confirmedExpired ? 'Expired at ' : 'Valid '}
+                        {confirmedWindow.validFrom.toLocaleString('en-IN', {
                           day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true,
+                          timeZone: 'Asia/Kolkata',
+                        })}
+                        {' – '}
+                        {confirmedWindow.validUntil.toLocaleString('en-IN', {
+                          hour: 'numeric', minute: '2-digit', hour12: true,
                           timeZone: 'Asia/Kolkata',
                         })}
                       </p>

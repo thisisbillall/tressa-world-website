@@ -88,3 +88,52 @@ export const BOOKING_DISCOUNT_PERCENT = 15;
 
 // QR / booking code expires this many minutes after the reservation time.
 export const BOOKING_CODE_GRACE_MIN = 15;
+
+// ── QR validity window helpers (pure, client-safe) ─────────────────────────
+// Reservation start as a UTC-anchored Date built from IST (UTC+5:30). '24:00'
+// folds to 00:00 of the next calendar day. Returns null on invalid inputs.
+export function computeReservationStart(
+  reservationDate: string | null | undefined,
+  hhmm: string | null | undefined,
+): Date | null {
+  if (!reservationDate || !hhmm || hhmm.length < 5) return null;
+  let dateStr = reservationDate;
+  let timeStr = hhmm.slice(0, 5);
+  if (timeStr === '24:00') {
+    const [y, mo, d] = reservationDate.split('-').map(Number);
+    if (!y || !mo || !d) return null;
+    const next = new Date(Date.UTC(y, mo - 1, d + 1));
+    dateStr = next.toISOString().slice(0, 10);
+    timeStr = '00:00';
+  }
+  const ist = new Date(`${dateStr}T${timeStr}:00+05:30`);
+  return Number.isNaN(ist.getTime()) ? null : ist;
+}
+
+// Active window: QR is honored only from reservation_time (validFrom) until
+// reservation_time + graceMin (validUntil). Both null when inputs are
+// incomplete (suite bookings, missing time).
+export function computeCodeWindow(
+  reservationDate: string | null | undefined,
+  hhmm: string | null | undefined,
+  graceMin: number = BOOKING_CODE_GRACE_MIN,
+): { validFrom: Date | null; validUntil: Date | null } {
+  const validFrom = computeReservationStart(reservationDate, hhmm);
+  if (!validFrom) return { validFrom: null, validUntil: null };
+  const validUntil = new Date(validFrom.getTime() + graceMin * 60_000);
+  return { validFrom, validUntil };
+}
+
+// Same window but derived from the canonical code_expires_at timestamp the
+// API already returns. Avoids re-parsing reservation_date, which pg can
+// shift by a calendar day depending on the server timezone.
+export function codeWindowFromExpiry(
+  codeExpiresAt: string | Date | null | undefined,
+  graceMin: number = BOOKING_CODE_GRACE_MIN,
+): { validFrom: Date | null; validUntil: Date | null } {
+  if (!codeExpiresAt) return { validFrom: null, validUntil: null };
+  const validUntil = codeExpiresAt instanceof Date ? codeExpiresAt : new Date(codeExpiresAt);
+  if (Number.isNaN(validUntil.getTime())) return { validFrom: null, validUntil: null };
+  const validFrom = new Date(validUntil.getTime() - graceMin * 60_000);
+  return { validFrom, validUntil };
+}

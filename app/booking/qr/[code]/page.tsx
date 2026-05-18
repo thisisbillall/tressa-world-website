@@ -3,7 +3,9 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { queryOne } from '@/lib/db';
 import {
+  BOOKING_CODE_GRACE_MIN,
   BOOKING_DISCOUNT_PERCENT,
+  codeWindowFromExpiry,
   formatBookingTime,
   isPriorityTime,
   PRIORITY_WINDOWS,
@@ -93,9 +95,15 @@ export default async function BookingQrPage({ params }: { params: { code: string
   const reservationHHMM = booking.reservation_time ? booking.reservation_time.slice(0, 5) : null;
   const timeLabel = reservationHHMM ? formatBookingTime(reservationHHMM) : '';
   const priority = !isSuite && isPriorityTime(reservationHHMM);
+  // Derive the window from code_expires_at (UTC timestamp from DB) — this is
+  // timezone-safe; parsing reservation_date can shift by a day on non-UTC servers.
+  const { validFrom, validUntil } = isSuite
+    ? { validFrom: null, validUntil: null }
+    : codeWindowFromExpiry(booking.code_expires_at, BOOKING_CODE_GRACE_MIN);
   const now = Date.now();
-  const expiryMs = booking.code_expires_at ? new Date(booking.code_expires_at).getTime() : null;
-  const expired = !isSuite && expiryMs != null && expiryMs < now;
+  const notYetActive = !isSuite && validFrom != null && now < validFrom.getTime();
+  const expired = !isSuite && validUntil != null && now >= validUntil.getTime();
+  const active = !isSuite && !notYetActive && !expired;
   const qrSrc = `/api/qr/${encodeURIComponent(booking.booking_code)}?size=420`;
   const amount = Number(booking.amount) || 0;
 
@@ -115,16 +123,31 @@ export default async function BookingQrPage({ params }: { params: { code: string
             <div className="bg-red-50 border border-red-200 px-5 py-4 text-red-700 text-sm">
               This QR / code has expired.{priority ? ` Please make a fresh booking to claim the ${BOOKING_DISCOUNT_PERCENT}% bill discount.` : ''}
             </div>
-          ) : (
+          ) : notYetActive ? (
+            <div className="bg-cream/60 border border-gold/40 px-5 py-5 text-maroon text-sm">
+              <p className="text-[10px] tracking-[0.3em] uppercase text-maroon/80 mb-1">QR not yet active</p>
+              <p>
+                Your QR activates at{' '}
+                <strong>{fmtExpiry(validFrom!.toISOString())}</strong> and is valid for{' '}
+                <strong>{BOOKING_CODE_GRACE_MIN} minutes</strong> from that time.
+              </p>
+            </div>
+          ) : (isSuite || active) ? (
             <div className="inline-block bg-white border border-maroon/15 p-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={qrSrc} alt={`QR for ${booking.booking_code}`} width={300} height={300} className="block w-[260px] h-[260px] md:w-[300px] md:h-[300px]" />
             </div>
-          )}
+          ) : null}
 
-          <p className="mt-5 font-mono text-2xl tracking-[0.25em] text-maroon">
-            {booking.booking_code}
-          </p>
+          {(isSuite || active) ? (
+            <p className="mt-5 font-mono text-2xl tracking-[0.25em] text-maroon">
+              {booking.booking_code}
+            </p>
+          ) : (
+            <p className="mt-5 font-mono text-2xl tracking-[0.25em] text-muted/40 line-through select-none">
+              {'•'.repeat(booking.booking_code.length)}
+            </p>
+          )}
 
           <dl className="mt-6 grid grid-cols-2 gap-3 text-left">
             {isSuite ? (
@@ -171,9 +194,15 @@ export default async function BookingQrPage({ params }: { params: { code: string
             </div>
           )}
 
-          {!isSuite && booking.code_expires_at && (
-            <p className={`mt-4 text-[11px] tracking-[0.2em] uppercase ${expired ? 'text-red-600' : 'text-muted'}`}>
-              {expired ? 'Expired' : 'Valid till'} {fmtExpiry(booking.code_expires_at)}
+          {!isSuite && validFrom && validUntil && (
+            <p
+              className={`mt-4 text-[11px] tracking-[0.2em] uppercase ${
+                expired ? 'text-red-600' : notYetActive ? 'text-maroon' : 'text-muted'
+              }`}
+            >
+              {expired
+                ? `Expired ${fmtExpiry(validUntil.toISOString())}`
+                : `Valid ${fmtExpiry(validFrom.toISOString())} – ${fmtExpiry(validUntil.toISOString())}`}
             </p>
           )}
         </div>

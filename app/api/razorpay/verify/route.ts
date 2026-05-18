@@ -56,10 +56,17 @@ export async function POST(req: NextRequest) {
     if (!rows[0]) {
       return NextResponse.json({ success: false, error: 'Booking not found' }, { status: 404 });
     }
-    // Fire-and-forget confirmation SMS (webhook is the backstop if this fails).
-    sendBookingConfirmationSmsOnce(rows[0].id, pool).catch((e) =>
-      console.error('[rzp verify] sms error:', e),
-    );
+    // Await before responding: on Vercel/serverless, fire-and-forget promises
+    // are killed when the function returns, so the Twilio HTTPS call never
+    // completes. Webhook is still the backstop if this throws.
+    try {
+      const smsRes = await sendBookingConfirmationSmsOnce(rows[0].id, pool);
+      if (!smsRes.sent) {
+        console.warn('[rzp verify] sms not sent:', smsRes);
+      }
+    } catch (e) {
+      console.error('[rzp verify] sms error:', e);
+    }
     return NextResponse.json({ success: true, data: rows[0] });
   } catch (e) {
     return jsonError(e);

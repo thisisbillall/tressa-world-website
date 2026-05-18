@@ -50,10 +50,18 @@ export async function POST(req: NextRequest) {
     );
     // Backstop confirmation SMS: /verify usually sends, but the webhook may
     // arrive first (browser closed, verify failed, etc.). Idempotent.
+    // Awaited so the serverless function doesn't terminate the Twilio call.
     if (rows[0]?.id) {
-      sendBookingConfirmationSmsOnce(rows[0].id, pool).catch((e) =>
-        console.error('[rzp webhook] sms error:', e),
-      );
+      try {
+        const smsRes = await sendBookingConfirmationSmsOnce(rows[0].id, pool);
+        if (!smsRes.claimed) {
+          // Already sent by /verify — expected, not an error.
+        } else if (!smsRes.sent) {
+          console.warn('[rzp webhook] sms not sent:', smsRes);
+        }
+      } catch (e) {
+        console.error('[rzp webhook] sms error:', e);
+      }
     }
     if (rows.length === 0 && paymentId) {
       console.warn('[rzp webhook] payment.captured for missing/cancelled booking, refunding', { orderId, paymentId });

@@ -12,7 +12,9 @@
 
 import twilio from 'twilio';
 import {
+  BOOKING_CODE_GRACE_MIN,
   BOOKING_DISCOUNT_PERCENT,
+  computeCodeWindow,
   formatBookingTime,
   isPriorityTime,
 } from './venueConfig';
@@ -78,8 +80,9 @@ type BookingSmsInput = {
 };
 
 // Claim-and-send: atomically marks sms_sent_at so two concurrent confirmation
-// paths (verify + webhook) don't send two SMS for the same booking. Fire-and-
-// forget — callers should not await when they want to return to the user fast.
+// paths (verify + webhook) don't send two SMS for the same booking. Callers
+// MUST await this on serverless (Vercel) — returning the HTTP response without
+// awaiting kills the in-flight Twilio HTTPS call and the SMS never sends.
 export async function sendBookingConfirmationSmsOnce(bookingId: string, pool: {
   query: (sql: string, params: any[]) => Promise<{ rows: any[] }>;
 }): Promise<{ claimed: boolean; sent?: boolean; error?: string }> {
@@ -239,8 +242,21 @@ export function buildBookingSmsBody(b: BookingSmsInput): string {
 
   lines.push('');
   lines.push(`Code: ${b.booking_code}`);
-  const expiryStr = !isSuite ? formatExpiryIST(b.code_expires_at) : '';
-  if (expiryStr) lines.push(`Valid till: ${expiryStr} IST`);
+  if (!isSuite) {
+    const { validFrom, validUntil } = computeCodeWindow(
+      b.reservation_date ?? null,
+      b.reservation_time ? b.reservation_time.slice(0, 5) : null,
+      BOOKING_CODE_GRACE_MIN,
+    );
+    if (validFrom && validUntil) {
+      lines.push(
+        `Valid: ${formatExpiryIST(validFrom)} – ${formatExpiryIST(validUntil)} IST (${BOOKING_CODE_GRACE_MIN} min)`,
+      );
+    } else {
+      const expiryStr = formatExpiryIST(b.code_expires_at);
+      if (expiryStr) lines.push(`Valid till: ${expiryStr} IST`);
+    }
+  }
 
   // Prefer the persisted Blob URL; otherwise the on-the-fly route still works.
   const pdfUrl = b.pdf_url || `${SITE_ORIGIN}/api/booking-pdf/${encodeURIComponent(b.booking_code)}`;
