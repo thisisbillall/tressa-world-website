@@ -72,7 +72,23 @@ const VENUES_META: {
   ];
 
 declare global {
-  interface Window { Razorpay: any }
+  interface Window {
+    Razorpay: any;
+    fbq?: (...args: any[]) => void;
+  }
+}
+
+// Thin wrapper so a missing/blocked pixel (ad-blockers, etc.) never breaks the
+// booking flow. Logged so we can spot misconfiguration in dev.
+function trackPixel(event: string, params?: Record<string, unknown>) {
+  try {
+    if (typeof window !== 'undefined' && typeof window.fbq === 'function') {
+      window.fbq('track', event, params);
+    }
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn('[fbq]', event, e);
+  }
 }
 
 let razorpayScriptPromise: Promise<boolean> | null = null;
@@ -244,6 +260,14 @@ export default function BookingClient() {
       broadcastTables(['bookings']);
 
       if (!rzpCfg?.order_id) {
+        // Free-booking path (no Razorpay): treat confirmation as the purchase.
+        trackPixel('Purchase', {
+          value: fee,
+          currency: 'INR',
+          content_name: venue.label,
+          content_category: venue.apiVenue,
+          num_items: guests,
+        });
         setConfirmed({
           id: booking.id,
           booking_code: booking.booking_code,
@@ -256,6 +280,14 @@ export default function BookingClient() {
 
       const loaded = await loadRazorpayScript();
       if (!loaded) throw new Error('Could not load the payment gateway. Please retry.');
+
+      trackPixel('InitiateCheckout', {
+        value: fee,
+        currency: 'INR',
+        content_name: venue.label,
+        content_category: venue.apiVenue,
+        num_items: guests,
+      });
 
       let paid = false;
       const releaseSlot = (reason: 'dismissed' | 'failed') => {
@@ -295,6 +327,14 @@ export default function BookingClient() {
               }),
             });
             broadcastTables(['bookings']);
+            trackPixel('Purchase', {
+              value: fee,
+              currency: 'INR',
+              content_name: venue.label,
+              content_category: venue.apiVenue,
+              num_items: guests,
+              order_id: response.razorpay_order_id,
+            });
             setConfirmed({
               id: vj.data.id,
               booking_code: vj.data.booking_code,
