@@ -161,6 +161,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="dns-prefetch" href="https://checkout.razorpay.com" />
         <link rel="dns-prefetch" href="https://api.razorpay.com" />
         <link rel="dns-prefetch" href="https://lumberjack.razorpay.com" />
+        {/* Meta Pixel — warm the connection so the fbevents.js script is fast. */}
+        <link rel="preconnect" href="https://connect.facebook.net" crossOrigin="" />
+        <link rel="dns-prefetch" href="https://connect.facebook.net" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content={SITE.shortName} />
@@ -170,8 +173,26 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(graph) }}
         />
+        {/* Meta Pixel Code — placed at the bottom of <head> per Meta's install guide. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','1942228859741625');fbq('track','PageView');`,
+          }}
+        />
+        {/* End Meta Pixel Code */}
       </head>
       <body className="font-sans antialiased" suppressHydrationWarning>
+        {/* Meta Pixel <noscript> fallback — must live in <body> for valid HTML. */}
+        <noscript>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            height="1"
+            width="1"
+            style={{ display: 'none' }}
+            src="https://www.facebook.com/tr?id=1942228859741625&ev=PageView&noscript=1"
+            alt=""
+          />
+        </noscript>
         <OfferBanner />
         <TransitionProvider>{children}</TransitionProvider>
       </body>
