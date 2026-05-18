@@ -5,8 +5,10 @@ import {
   BOOKING_CODE_GRACE_MIN,
   BOOKING_END_HHMM,
   BOOKING_START_HHMM,
+  BOOKING_STEP_MIN,
   isValidBookingTime,
 } from './venueConfig';
+import { isValidBookingTimeFor, type BookingConfig } from './bookingConfig';
 
 export type VenueChargeRow = {
   venue: string;
@@ -64,8 +66,13 @@ export function findTableSeats(_venue: VenueKey, _tableRef?: string | null): num
 // Combine reservation date + HH:MM time into a UTC timestamp + grace window.
 // IST is UTC+5:30 — encoded directly in the ISO string so the server's local
 // timezone doesn't shift the result. '24:00' is normalised to 00:00 of the
-// following day (midnight at the end of the reservation date).
-export function computeCodeExpiry(reservationDate: string, hhmm: string): Date | null {
+// following day (midnight at the end of the reservation date). graceMin lets
+// the caller override the default with the venue's configured grace.
+export function computeCodeExpiry(
+  reservationDate: string,
+  hhmm: string,
+  graceMin: number = BOOKING_CODE_GRACE_MIN,
+): Date | null {
   if (!hhmm || hhmm.length < 5) return null;
   let dateStr = reservationDate;
   let timeStr = hhmm.slice(0, 5);
@@ -78,7 +85,7 @@ export function computeCodeExpiry(reservationDate: string, hhmm: string): Date |
   }
   const ist = new Date(`${dateStr}T${timeStr}:00+05:30`);
   if (Number.isNaN(ist.getTime())) return null;
-  return new Date(ist.getTime() + BOOKING_CODE_GRACE_MIN * 60_000);
+  return new Date(ist.getTime() + graceMin * 60_000);
 }
 
 export function nightsBetween(checkIn: string, checkOut: string): number {
@@ -140,7 +147,10 @@ export async function cleanupStaleBookings(maxAgeMinutes = 5): Promise<number> {
   }
 }
 
-export function validateBooking(input: BookingInput): string | null {
+export function validateBooking(
+  input: BookingInput,
+  cfg?: BookingConfig | null,
+): string | null {
   if (!input.customer_name?.trim()) return 'Name is required';
   if (!input.customer_phone?.trim()) return 'Phone is required';
   if (!['bar', 'restaurant', 'rooftop', 'suite'].includes(input.venue)) return 'Invalid venue';
@@ -152,8 +162,13 @@ export function validateBooking(input: BookingInput): string | null {
   } else {
     if (!input.reservation_date) return 'Date is required';
     if (!input.reservation_time) return 'Time is required';
-    if (!isValidBookingTime(input.reservation_time.slice(0, 5))) {
-      return `Pick a time in 30-min steps between ${BOOKING_START_HHMM} and ${BOOKING_END_HHMM}.`;
+    const t = input.reservation_time.slice(0, 5);
+    if (cfg) {
+      if (!isValidBookingTimeFor(cfg, t)) {
+        return `Pick a time in ${cfg.step_min}-min steps between ${cfg.start_hhmm} and ${cfg.end_hhmm}.`;
+      }
+    } else if (!isValidBookingTime(t)) {
+      return `Pick a time in ${BOOKING_STEP_MIN}-min steps between ${BOOKING_START_HHMM} and ${BOOKING_END_HHMM}.`;
     }
     if (!input.guests || input.guests < 1) return 'Guests is required';
     if (input.guests > 20) return 'For parties over 20, please contact us directly.';

@@ -12,6 +12,11 @@ import {
   listBookingTimes,
   PRIORITY_WINDOWS,
 } from '@/lib/venueConfig';
+import {
+  type BookingConfig,
+  isPriorityTimeFor,
+  listBookingTimesFor,
+} from '@/lib/bookingConfig';
 import type { VenueId } from '@/lib/venueTypes';
 import { sky, soul, unwind } from '@/lib/brandImages';
 import { apiFetch } from '@/lib/apiClient';
@@ -19,14 +24,18 @@ import { broadcastTables } from '@/utils/broadcast';
 
 type ApiVenue = 'restaurant' | 'rooftop' | 'bar' | 'suite';
 
-const VENUES: {
+// Presentation-only metadata. The enabled flag + disabled_reason + every
+// numeric setting (fee / discount / window / step / priority windows) lives
+// in the booking_config table and is fetched at mount time. The fallback*
+// fields are only used until /api/booking-config responds.
+const VENUES_META: {
   id: VenueId;
   apiVenue: ApiVenue;
   label: string;
   tag: string;
   hero: { src: string; alt: string };
-  disabled?: boolean;
-  disabledReason?: string;
+  fallbackDisabled?: boolean;
+  fallbackDisabledReason?: string;
 }[] = [
     {
       id: 'restaurant',
@@ -42,24 +51,23 @@ const VENUES: {
       tag: 'Signature Bar',
       hero: { src: unwind[0]?.src ?? '', alt: unwind[0]?.alt ?? 'TRESSA Unwind' },
     },
-    
     {
       id: 'rooftop',
       apiVenue: 'rooftop',
       label: 'Sky',
-      tag: 'Rooftop Lounge · Temporarily Closed',
-      disabled: true,
-      disabledReason: 'Sky is temporarily closed. Please check back soon.',
+      tag: 'Rooftop Lounge',
+      fallbackDisabled: true,
+      fallbackDisabledReason: 'Sky is temporarily closed. Please check back soon.',
       hero: { src: sky[0]?.src ?? '', alt: sky[0]?.alt ?? 'TRESSA Sky' },
     },
     {
       id: 'suites',
       apiVenue: 'suite',
       label: 'Aura',
-      tag: 'Luxury Suites · Coming Soon',
+      tag: 'Luxury Suites',
       hero: { src: sky[3]?.src ?? sky[0]?.src ?? '', alt: 'TRESSA Aura — Luxury Suites' },
-      disabled: true,
-      disabledReason: 'Aura suite booking opens soon. Stay tuned.',
+      fallbackDisabled: true,
+      fallbackDisabledReason: 'Aura suite booking opens soon. Stay tuned.',
     },
   ];
 
@@ -94,15 +102,45 @@ type ConfirmedBooking = {
 export default function BookingClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  const [configs, setConfigs] = useState<BookingConfig[] | null>(null);
+
+  // Merge presentation metadata with the DB row so the per-row enabled flag
+  // and disabled_reason from booking_config drive the UI. Until the fetch
+  // returns, fall back to the values that ship in code.
+  const venues = useMemo(() => {
+    return VENUES_META.map((m) => {
+      const row = configs?.find((c) => c.venue === m.apiVenue);
+      const disabled = row ? !row.enabled : !!m.fallbackDisabled;
+      const disabledReason = row?.disabled_reason ?? m.fallbackDisabledReason;
+      return { ...m, disabled, disabledReason };
+    });
+  }, [configs]);
+
   const initialId = (() => {
     const q = searchParams.get('venue') as VenueId | null;
-    return q && VENUES.some((v) => v.id === q && !v.disabled) ? q : 'restaurant';
+    return q && VENUES_META.some((v) => v.id === q) ? q : 'restaurant';
   })();
 
   const [venueId, setVenueId] = useState<VenueId>(initialId);
-  const venue = useMemo(() => VENUES.find((v) => v.id === venueId)!, [venueId]);
+  const venue = useMemo(
+    () => venues.find((v) => v.id === venueId) ?? venues[0],
+    [venues, venueId],
+  );
 
-  const times = useMemo(() => listBookingTimes(), []);
+  const cfg = useMemo(
+    () => configs?.find((c) => c.venue === venue.apiVenue) ?? null,
+    [configs, venue],
+  );
+
+  const fee = cfg?.booking_fee_inr ?? BOOKING_FEE_INR;
+  const discount = cfg?.discount_percent ?? BOOKING_DISCOUNT_PERCENT;
+  const priorityWindows = cfg?.priority_windows ?? PRIORITY_WINDOWS;
+
+  const times = useMemo(
+    () => (cfg ? listBookingTimesFor(cfg) : listBookingTimes()),
+    [cfg],
+  );
   const exclusiveTimes = useMemo(() => times.filter((t) => t.priority), [times]);
   const premiumTimes = useMemo(() => times.filter((t) => !t.priority), [times]);
   const defaultTime = exclusiveTimes[0]?.value ?? times[0]?.value ?? '15:00';
@@ -118,6 +156,26 @@ export default function BookingClient() {
 
   useEffect(() => { void loadRazorpayScript(); }, []);
 
+  useEffect(() => {
+    let alive = true;
+    apiFetch<BookingConfig[]>('/api/booking-config', { cache: 'no-store' })
+      .then((j) => { if (alive) setConfigs(j.data); })
+      .catch(() => { /* keep static fallback */ });
+    return () => { alive = false; };
+  }, []);
+
+  // When cfg changes (venue switch, or DB load), keep slotType + time valid.
+  // Auto-flip to whichever pool has options, and reset time if the current
+  // value isn't in the active pool.
+  useEffect(() => {
+    let nextType = slotType;
+    if (nextType === 'exclusive' && exclusiveTimes.length === 0 && premiumTimes.length > 0) nextType = 'premium';
+    if (nextType === 'premium' && premiumTimes.length === 0 && exclusiveTimes.length > 0) nextType = 'exclusive';
+    if (nextType !== slotType) setSlotType(nextType);
+    const pool = nextType === 'exclusive' ? exclusiveTimes : premiumTimes;
+    if (pool.length > 0 && !pool.some((t) => t.value === time)) setTime(pool[0]!.value);
+  }, [exclusiveTimes, premiumTimes, slotType, time]);
+
   const switchSlotType = (next: 'exclusive' | 'premium') => {
     if (next === slotType) return;
     setSlotType(next);
@@ -128,7 +186,7 @@ export default function BookingClient() {
   };
 
   const selectVenue = (id: VenueId) => {
-    const v = VENUES.find((x) => x.id === id);
+    const v = venues.find((x) => x.id === id);
     if (!v || v.disabled) return;
     setVenueId(id);
     setErrorMsg(null);
@@ -136,7 +194,7 @@ export default function BookingClient() {
     router.replace(`/booking?venue=${id}`, { scroll: false });
   };
 
-  const priority = isPriorityTime(time);
+  const priority = cfg ? isPriorityTimeFor(cfg, time) : isPriorityTime(time);
 
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -259,6 +317,10 @@ export default function BookingClient() {
     }
   };
 
+  const confirmedPriority = cfg
+    ? isPriorityTimeFor(cfg, confirmed?.reservation_time?.slice(0, 5))
+    : isPriorityTime(confirmed?.reservation_time?.slice(0, 5));
+
   return (
     <main className="min-h-screen bg-[#fdf8ea] text-ink md:h-screen md:overflow-hidden">
       <div className="md:grid md:grid-cols-2 md:h-full">
@@ -295,11 +357,13 @@ export default function BookingClient() {
           <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 text-cream">
             <p className="text-[10px] tracking-[0.5em] uppercase text-cream/70 mb-2">Priority Booking</p>
             <h1 className="font-serif text-3xl md:text-5xl font-light leading-tight">{venue.label}</h1>
-            <p className="text-[11px] md:text-xs tracking-[0.2em] uppercase mt-1.5 text-cream/80">{venue.tag}</p>
+            <p className="text-[11px] md:text-xs tracking-[0.2em] uppercase mt-1.5 text-cream/80">
+              {venue.tag}{venue.disabled ? ' · Temporarily Closed' : ''}
+            </p>
 
             <div className="mt-5 flex flex-wrap gap-2 md:gap-3 max-w-md">
-              <Badge dark icon={<BadgePercent size={14} />} title={`${BOOKING_DISCOUNT_PERCENT}% OFF total bill`} />
-              <Badge dark icon={<ShieldCheck size={14} />} title={`₹${BOOKING_FEE_INR} booking charge only`} />
+              <Badge dark icon={<BadgePercent size={14} />} title={`${discount}% OFF total bill`} />
+              <Badge dark icon={<ShieldCheck size={14} />} title={`₹${fee} booking charge only`} />
             </div>
           </div>
         </motion.aside>
@@ -309,20 +373,22 @@ export default function BookingClient() {
           <div className="max-w-3xl mx-auto">
             <p className="text-[10px] tracking-[0.5em] uppercase text-maroon mb-2">Reserve your time</p>
             <h2 className=" text-xl md:text-3xl font-light text-ink">
-              One step.  <span className="font-extrabold">₹{BOOKING_FEE_INR}</span> booking charge, <span className="font-extrabold">{BOOKING_DISCOUNT_PERCENT}% </span> OFF total bill.
+              One step.  <span className="font-extrabold">₹{fee}</span> booking charge, <span className="font-extrabold">{discount}% </span> OFF total bill.
             </h2>
             <p className="mt-2 text-sm text-muted">
               A Tressa-exclusive discount benefit beyond Zomato &amp; Swiggy.
-              <span className="block mt-1 text-[11px]">
-                <span className="font-extrabold">{BOOKING_DISCOUNT_PERCENT}% </span>off applies only for bookings in {PRIORITY_WINDOWS.map((w) => w.label).join(' or ')}.
-              </span>
+              {priorityWindows.length > 0 && (
+                <span className="block mt-1 text-[11px]">
+                  <span className="font-extrabold">{discount}% </span>off applies only for bookings in {priorityWindows.map((w) => w.label).join(' or ')}.
+                </span>
+              )}
               <span className="block mt-1 text-[11px] text-maroon">
-                <span className="font-extrabold">₹{BOOKING_FEE_INR}</span> is the booking charge only — it is redeemed against your total billing at the venue.
+                <span className="font-extrabold">₹{fee}</span> is the booking charge only — it is redeemed against your total billing at the venue.
               </span>
             </p>
 
             <div className="flex flex-wrap gap-2 my-6">
-              {VENUES.map((v) => (
+              {venues.map((v) => (
                 <button
                   key={v.id}
                   onClick={() => selectVenue(v.id)}
@@ -336,7 +402,7 @@ export default function BookingClient() {
                     }`}
                 >
                   {v.label}
-                  {v.disabled && (v.label === "Sky" ? <span className="ml-2 text-[8px] opacity-70">Open Soon</span>: <span className="ml-2 text-[8px] opacity-70">soon</span>)}
+                  {v.disabled && <span className="ml-2 text-[8px] opacity-70">closed</span>}
                 </button>
               ))}
             </div>
@@ -368,14 +434,14 @@ export default function BookingClient() {
                     <p className="mt-3 font-mono text-xl tracking-[0.25em] text-maroon">
                       {confirmed.booking_code}
                     </p>
-                    {isPriorityTime(confirmed.reservation_time?.slice(0, 5)) ? (
+                    {confirmedPriority ? (
                       <p className="mt-2 text-[11px] text-muted">
                         Show this QR / code at the venue for{' '}
-                        <strong className="text-maroon">{BOOKING_DISCOUNT_PERCENT}% OFF</strong> the total bill.
+                        <strong className="text-maroon">{discount}% OFF</strong> the total bill.
                       </p>
                     ) : (
                       <p className="mt-2 text-[11px] text-muted">
-                        Your Premium slot is reserved. The {BOOKING_DISCOUNT_PERCENT}% bill discount is not applicable for this time.
+                        Your Premium slot is reserved. The {discount}% bill discount is not applicable for this time.
                       </p>
                     )}
                     {confirmed.code_expires_at && (
@@ -425,6 +491,12 @@ export default function BookingClient() {
                   onSubmit={submit}
                   className="bg-white border border-maroon/15 p-5 md:p-8 space-y-5"
                 >
+                  {venue.disabled && (
+                    <p className="text-[11px] text-maroon bg-gold/10 border border-gold/40 px-3 py-2">
+                      {venue.disabledReason || 'Bookings are not open for this venue right now.'}
+                    </p>
+                  )}
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field label="Date" icon={<CalendarDays size={13} />}>
                       <input
@@ -457,25 +529,27 @@ export default function BookingClient() {
                       <button
                         type="button"
                         onClick={() => switchSlotType('exclusive')}
+                        disabled={exclusiveTimes.length === 0}
                         className={`px-3 py-2.5 text-[10px] tracking-[0.25em] uppercase border transition-all ${slotType === 'exclusive'
                             ? 'bg-maroon text-cream border-maroon'
                             : 'bg-white border-maroon/20 text-maroon hover:border-gold hover:text-gold'
-                          }`}
+                          } disabled:opacity-40 disabled:cursor-not-allowed`}
                       >
-                        Exclusive · {BOOKING_DISCOUNT_PERCENT}% OFF
+                        Exclusive · {discount}% OFF
                       </button>
                       <button
                         type="button"
                         onClick={() => switchSlotType('premium')}
+                        disabled={premiumTimes.length === 0}
                         className={`px-3 py-2.5 text-[10px] tracking-[0.25em] uppercase border transition-all ${slotType === 'premium'
                             ? 'bg-maroon text-cream border-maroon'
                             : 'bg-white border-maroon/20 text-maroon hover:border-gold hover:text-gold'
-                          }`}
+                          } disabled:opacity-40 disabled:cursor-not-allowed`}
                       >
                         Premium
                       </button>
                     </div>
-                    <Field label="Time · 15-min slots" icon={<Clock size={13} />}>
+                    <Field label={`Time · ${cfg?.step_min ?? 15}-min slots`} icon={<Clock size={13} />}>
                       <TimeDropdown
                         options={slotType === 'exclusive' ? exclusiveTimes : premiumTimes}
                         value={time}
@@ -493,13 +567,15 @@ export default function BookingClient() {
                     {priority ? (
                       <>
                         <strong className="text-maroon">Exclusive slot.</strong> Get{' '}
-                        <strong>{BOOKING_DISCOUNT_PERCENT}% OFF</strong> on the total bill
+                        <strong>{discount}% OFF</strong> on the total bill
                         via Tressa Pay.
                       </>
                     ) : (
                       <>
-                        <strong className="text-maroon">Premium slot.</strong> Your reservation is held, but the {BOOKING_DISCOUNT_PERCENT}% discount
-                        applies only during 3:00 PM – 7:00 PM or 10:00 PM – 11:00 PM (Exclusive).
+                        <strong className="text-maroon">Premium slot.</strong> Your reservation is held, but the {discount}% discount
+                        {priorityWindows.length > 0
+                          ? ` applies only during ${priorityWindows.map((w) => w.label).join(' or ')} (Exclusive).`
+                          : ' is not active right now.'}
                       </>
                     )}
                   </div>
@@ -522,7 +598,7 @@ export default function BookingClient() {
                       <a href="/terms" target="_blank" rel="noopener" className="text-maroon underline hover:text-gold">
                         Terms &amp; Refund Policy
                       </a>{' '}
-                      and acknowledge the ₹{BOOKING_FEE_INR} booking charge is redeemed on the total billing at the venue, and is non-refundable if the slot is not used. Sky bookings additionally have a cover charge that is billed with your menu at the venue.
+                      and acknowledge the ₹{fee} booking charge is redeemed on the total billing at the venue, and is non-refundable if the slot is not used. Sky bookings additionally have a cover charge that is billed with your menu at the venue.
                     </span>
                   </label>
 
@@ -540,7 +616,7 @@ export default function BookingClient() {
                     <span className="absolute inset-0 bg-gold translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
                     <span className="relative group-hover:text-maroon transition-colors flex items-center justify-center gap-2">
                       {sending && <Loader2 className="animate-spin" size={14} />}
-                      {sending ? 'Processing…' : `Pay ₹${BOOKING_FEE_INR} Booking Charge & Confirm`}
+                      {sending ? 'Processing…' : `Pay ₹${fee} Booking Charge & Confirm`}
                     </span>
                   </button>
                 </motion.form>

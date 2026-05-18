@@ -12,7 +12,7 @@ import {
 } from '@/lib/siteContent';
 import { Lock, LogOut, Plus, Save, Trash2, RotateCcw, ExternalLink } from 'lucide-react';
 
-const ADMIN_PASS = 'tressa2026'; // demo only — replace with real auth before production
+const ADMIN_PASS = 'Rajat@1400';
 const AUTH_KEY = 'tressa.admin.v1';
 
 type Tab =
@@ -56,7 +56,7 @@ function Gate({ onPass }: { onPass: () => void }) {
         />
         {err && <p className="text-xs text-red-600 mt-2">Incorrect password.</p>}
         <button type="submit" className="btn-primary w-full mt-6 inline-block text-center"><span>Enter</span></button>
-        <p className="text-[10px] tracking-[0.3em] uppercase text-muted mt-5 text-center">Demo password: tressa2026</p>
+        <p className="text-[10px] tracking-[0.3em] uppercase text-muted mt-5 text-center">Authorised access only</p>
       </form>
     </div>
   );

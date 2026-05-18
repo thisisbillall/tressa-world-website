@@ -13,6 +13,7 @@ import { guardDbConfigured, jsonError } from '@/lib/apiError';
 import { generateBookingCode } from '@/lib/bookingCode';
 import { sendBookingConfirmationSmsOnce } from '@/lib/twilio';
 import { BOOKING_FEE_INR } from '@/lib/venueConfig';
+import { getBookingConfig } from '@/lib/bookingConfigDb';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -68,7 +69,21 @@ export async function POST(req: NextRequest) {
   mark(`body parsed venue=${body?.venue} name=${body?.customer_name}`);
   console.log('[bookings POST] body:', JSON.stringify(body));
 
-  const err = validateBooking(body);
+  // Per-venue config from booking_config — drives fee, time validation,
+  // grace, and the enabled gate. Fall back to static defaults if the row is
+  // missing so a fresh DB without the migration still functions.
+  const cfg = await getBookingConfig(body.venue).catch(() => null);
+  mark(`cfg loaded enabled=${cfg?.enabled ?? 'fallback'}`);
+
+  if (cfg && !cfg.enabled) {
+    mark('venue disabled by booking_config');
+    return NextResponse.json(
+      { success: false, error: cfg.disabled_reason || 'Bookings are not open for this venue.' },
+      { status: 403 },
+    );
+  }
+
+  const err = validateBooking(body, cfg);
   if (err) { mark(`validation failed: ${err}`); return NextResponse.json({ success: false, error: err }, { status: 400 }); }
   mark('validated');
 
@@ -109,9 +124,9 @@ export async function POST(req: NextRequest) {
       }
     } else {
       // Flat reservation fee, redeemable against the venue bill at billing —
-      // no table selection, no per-head math. The 15% off Tressa Pay benefit
-      // stacks on top when the slot is Exclusive.
-      amount = BOOKING_FEE_INR;
+      // no table selection, no per-head math. The discount benefit stacks on
+      // top when the slot is Exclusive. Fee is per-venue (booking_config).
+      amount = cfg?.booking_fee_inr ?? BOOKING_FEE_INR;
       mark(`table path flat fee=${amount}`);
     }
 
@@ -124,7 +139,7 @@ export async function POST(req: NextRequest) {
     // SMS / scan time from reservation_time directly.
     const hhmm = !isSuite && body.reservation_time ? body.reservation_time.slice(0, 5) : null;
     const codeExpiresAt = !isSuite && body.reservation_date && hhmm
-      ? computeCodeExpiry(body.reservation_date, hhmm)
+      ? computeCodeExpiry(body.reservation_date, hhmm, cfg?.code_grace_min)
       : null;
 
     // Razorpay must be configured up-front if the booking will require payment,
