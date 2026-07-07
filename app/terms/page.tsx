@@ -229,6 +229,34 @@ export default function TermsPage() {
             </ul>
           </Section>
 
+          <Section title="12. Privacy &amp; Policy">
+            <p>
+              We collect only the information needed to hold your slot and
+              deliver your booking code — your name, phone number, party size,
+              chosen venue, date, and time — plus the Razorpay transaction
+              references generated when you pay. We do not ask for or store your
+              full card, UPI, or netbanking credentials; those are handled
+              entirely by Razorpay on their PCI-DSS-compliant systems.
+            </p>
+            <List
+              items={[
+                'Your phone number is used to send the booking code, QR-page link, and PDF-slip link via SMS through Twilio, and to contact you about that specific booking if needed.',
+                'Payment data is processed by <strong>Razorpay</strong>; SMS delivery by <strong>Twilio</strong>; PDF slips are stored on <strong>Vercel Blob</strong>. These processors handle your data only to provide their respective service.',
+                'We do <strong>not</strong> sell your personal data, and we do not share your contact details with third parties for marketing without your explicit consent.',
+                'Booking records — including the Razorpay <code>order_id</code> and <code>payment_id</code> — are retained for reconciliation, refund handling, tax, and legal compliance, and may be kept after the QR expires.',
+                'The PDF slip is hosted on a CDN and may remain accessible at its URL after expiry so you can retrieve your records; treat that link as private and do not share it publicly.',
+                'You may request access to, correction of, or deletion of your personal data (subject to records we are legally required to keep) by contacting us using the details in section 11.',
+              ]}
+            />
+            <p>
+              By paying the ₹{BOOKING_FEE_INR} reservation fee you consent to the
+              collection and processing of your data as described above and in
+              section 8. If this policy changes, the version in force for any
+              booking is the one published on this page on the date the booking
+              is paid.
+            </p>
+          </Section>
+
           <p className="mt-16 text-xs text-cream/40">
             By paying the ₹{BOOKING_FEE_INR} reservation fee you confirm that you
             have read and agree to these Terms &amp; Conditions, including the
