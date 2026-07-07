@@ -16,7 +16,7 @@ npm run dev
 ```
 Open http://localhost:3001
 
-## SEO
+## SEOv
 - Rich metadata + OpenGraph / Twitter cards in `app/layout.tsx`
 - JSON-LD `Restaurant` + `Hotel` schema injected
 - `app/sitemap.ts` + `app/robots.ts`
