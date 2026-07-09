@@ -102,3 +102,8 @@ html.lenis, html.lenis body { height: auto; }
   transition: width 0.4s cubic-bezier(0.25,0.46,0.45,0.94);
 }
 .nav-link:hover::after { width: 100%; }
+
+/* Concierge launcher — rotating gold gradient ring */
+@keyframes chatOrbit { to { transform: rotate(360deg); } }
+.chat-orbit { animation: chatOrbit 4s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .chat-orbit { animation: none; } }

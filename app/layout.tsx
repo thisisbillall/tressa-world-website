@@ -3,6 +3,7 @@ import { Poppins, Playfair_Display } from 'next/font/google';
 import './globals.css';
 import TransitionProvider from '@/components/TransitionProvider';
 import OfferBanner from '@/components/OfferBanner';
+import ChatWidget from '@/components/ChatWidget';
 import { SITE, keywords, VERIFICATION } from '@/lib/seo';
 import {
   organizationSchema,
@@ -195,6 +196,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </noscript>
         <OfferBanner />
         <TransitionProvider>{children}</TransitionProvider>
+        <ChatWidget />
       </body>
     </html>
   );

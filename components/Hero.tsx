@@ -67,10 +67,12 @@ export default function Hero() {
           transition={{ duration: 0.9, delay: 2.0 }}
           className="flex flex-col sm:flex-row gap-4 justify-center items-center"
         >
-          <Link href="/booking" className="btn-outline">
-            <span>BOOK NOW</span>
+          <Link href="/suites" className="btn-primary border border-cream/40">
+            <span>BOOK SUITES</span>
           </Link>
-          {/* Aura Suites under development — CTA stays hidden until launch */}
+          <Link href="/booking" className="btn-outline">
+            <span>BOOK A TABLE</span>
+          </Link>
         </motion.div>
       </motion.div>
 

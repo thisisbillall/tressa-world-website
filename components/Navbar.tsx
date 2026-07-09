@@ -117,15 +117,23 @@ export default function Navbar() {
           ))}
         </ul>
 
-        <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          <Link
+            href="/suites"
+            className="hidden md:inline-block px-5 py-3 text-[11px] tracking-[0.25em] uppercase transition-all duration-500 relative overflow-hidden group bg-maroon text-cream border border-cream/40"
+          >
+            <span className="absolute inset-0 bg-gold translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.77,0,0.175,1)]" />
+            <span className="relative group-hover:text-maroon transition-colors duration-300">Book Suites</span>
+          </Link>
+
           <Link
             href="/booking"
-            className={`hidden md:inline-block px-6 py-3 text-[11px] tracking-[0.25em] uppercase border transition-all duration-500 relative overflow-hidden group ${
+            className={`hidden md:inline-block px-5 py-3 text-[11px] tracking-[0.25em] uppercase border transition-all duration-500 relative overflow-hidden group ${
               scrolled ? 'border-maroon text-maroon' : 'border-cream text-cream'
             }`}
           >
             <span className="absolute inset-0 bg-gold translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.77,0,0.175,1)]" />
-            <span className="relative group-hover:text-maroon transition-colors duration-300">Book Now</span>
+            <span className="relative group-hover:text-maroon transition-colors duration-300">Book a Table</span>
           </Link>
 
           <button
@@ -159,11 +167,20 @@ export default function Navbar() {
             ))}
             <li>
               <Link
+                href="/suites"
+                onClick={() => setOpen(false)}
+                className="btn-primary inline-block text-center w-full border border-cream/40"
+              >
+                <span>Book Suites</span>
+              </Link>
+            </li>
+            <li>
+              <Link
                 href="/booking"
                 onClick={() => setOpen(false)}
-                className="btn-primary inline-block text-center"
+                className="inline-block text-center w-full px-6 py-3 text-[11px] tracking-[0.25em] uppercase border border-maroon text-maroon"
               >
-                <span>Book Now · ₹99</span>
+                <span>Book a Table · ₹99</span>
               </Link>
             </li>
           </ul>
