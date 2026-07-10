@@ -4,8 +4,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, BedDouble, CalendarDays, Check, ChevronLeft, ChevronRight,
-  Loader2, Maximize2, ShieldCheck, Sparkles, Users, X,
+  ArrowLeft, CalendarDays, Check, ChevronLeft, ChevronRight,
+  Loader2, ShieldCheck, Sparkles, Users, X,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/apiClient';
 
@@ -255,12 +255,6 @@ function RoomCard({ room, index, onBook }: { room: SuiteRoom; index: number; onB
       <div className="flex flex-col flex-1 p-5 md:p-6">
         <h3 className="font-serif text-2xl font-light text-ink">{room.name}</h3>
         {room.subtitle && <p className="text-[13px] text-maroon/80 mt-0.5">{room.subtitle}</p>}
-
-        <div className="flex flex-wrap gap-3 mt-3 text-[11px] text-muted">
-          {room.bed_type && <span className="inline-flex items-center gap-1"><BedDouble size={13} /> {room.bed_type}</span>}
-          <span className="inline-flex items-center gap-1"><Users size={13} /> Up to {room.max_guests}</span>
-          {room.size_sqft && <span className="inline-flex items-center gap-1"><Maximize2 size={13} /> {room.size_sqft} sq.ft</span>}
-        </div>
 
         {room.amenities?.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-4">
