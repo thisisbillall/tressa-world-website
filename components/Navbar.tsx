@@ -120,7 +120,9 @@ export default function Navbar() {
         <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           <Link
             href="/suites"
-            className="hidden md:inline-block px-5 py-3 text-[11px] tracking-[0.25em] uppercase transition-all duration-500 relative overflow-hidden group bg-maroon text-cream border border-cream/40"
+            className={`hidden md:inline-block px-5 py-3 text-[11px] tracking-[0.25em] uppercase transition-all duration-500 relative overflow-hidden group border ${
+              scrolled ? 'border-maroon/50 text-maroon' : 'border-cream/40 text-cream'
+            }`}
           >
             <span className="absolute inset-0 bg-gold translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.77,0,0.175,1)]" />
             <span className="relative group-hover:text-maroon transition-colors duration-300">Book Suites</span>
@@ -129,7 +131,7 @@ export default function Navbar() {
           <Link
             href="/booking"
             className={`hidden md:inline-block px-5 py-3 text-[11px] tracking-[0.25em] uppercase border transition-all duration-500 relative overflow-hidden group ${
-              scrolled ? 'border-maroon text-maroon' : 'border-cream text-cream'
+              scrolled ? 'border-maroon text-maroon' : 'border-gold text-gold'
             }`}
           >
             <span className="absolute inset-0 bg-gold translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.77,0,0.175,1)]" />

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/db';
 import { verifyWebhookSignature } from '@/lib/razorpay';
+import { sendSuiteGroupSmsOnce } from '@/lib/suiteGroup';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -40,9 +41,15 @@ export async function POST(req: NextRequest) {
                 status = CASE WHEN status = 'pending' THEN 'confirmed' ELSE status END
           WHERE razorpay_order_id = $2
             AND status IN ('pending','confirmed')
-          RETURNING id`,
+          RETURNING id, group_id`,
         [paymentId || null, orderId],
       );
+      // Backstop confirmation SMS for the whole group (idempotent) — fires if
+      // the browser /verify call was missed (tab closed, verify failed, etc.).
+      if (rows[0]?.group_id) {
+        try { await sendSuiteGroupSmsOnce(pool, rows[0].group_id); }
+        catch (e) { console.error('[suite webhook] sms error:', e); }
+      }
       // Paid but no booking (row was swept/cancelled before capture) → refund so
       // we never keep money for a room we can't honour.
       if (rows.length === 0 && paymentId) {

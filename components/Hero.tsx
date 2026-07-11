@@ -67,8 +67,12 @@ export default function Hero() {
           transition={{ duration: 0.9, delay: 2.0 }}
           className="flex flex-col sm:flex-row gap-4 justify-center items-center"
         >
-          <Link href="/suites" className="btn-primary border border-cream/40">
-            <span>BOOK SUITES</span>
+          <Link
+            href="/suites"
+            className="relative overflow-hidden px-[2.2rem] py-[0.9rem] text-[0.72rem] tracking-[0.2em] uppercase font-medium border border-cream/40 text-cream group"
+          >
+            <span className="absolute inset-0 bg-gold translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.77,0,0.175,1)]" />
+            <span className="relative z-[1] group-hover:text-maroon transition-colors duration-300">BOOK SUITES</span>
           </Link>
           <Link href="/booking" className="btn-outline">
             <span>BOOK A TABLE</span>

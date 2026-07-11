@@ -87,6 +87,96 @@ export async function getSuiteRoomById(id: string): Promise<SuiteRoom | null> {
   );
 }
 
+export type RoomWithFree = SuiteRoom & { is_free: boolean };
+
+// Every active room, each flagged free/taken for the given date range. When no
+// dates are passed, all rooms count as free (used for the plain listing).
+export async function getRoomsWithAvailability(checkIn?: string, checkOut?: string): Promise<RoomWithFree[]> {
+  if (checkIn && checkOut && nightsBetween(checkIn, checkOut) >= 1) {
+    const { rows } = await pool.query<RoomWithFree>(
+      `SELECT r.id, r.room_number, r.name, r.subtitle, r.description, r.floor, r.bed_type,
+              r.size_sqft, r.max_guests, r.base_price, r.gst_rate, r.offer_active,
+              r.offer_percent, r.offer_label, r.amenities, r.images, r.is_active, r.sort_order,
+              NOT EXISTS (
+                SELECT 1 FROM suite_bookings b
+                 WHERE b.room_id = r.id
+                   AND b.status IN ('pending','confirmed')
+                   AND daterange(b.check_in, b.check_out, '[)') && daterange($1, $2, '[)')
+              ) AS is_free
+         FROM suite_rooms r
+        WHERE r.is_active = TRUE
+        ORDER BY r.sort_order ASC, r.room_number ASC`,
+      [checkIn, checkOut],
+    );
+    return rows;
+  }
+  const rooms = await listActiveSuiteRooms();
+  return rooms.map((r) => ({ ...r, is_free: true }));
+}
+
+// A booking "type" (Grand / Celebration / Delight) aggregated from its rooms.
+export type SuiteType = {
+  name: string;
+  subtitle: string | null;
+  description: string | null;
+  images: string[];
+  amenities: string[];
+  base_price: number;
+  gst_rate: number;
+  max_guests: number;
+  offer_active: boolean;
+  offer_percent: number;
+  offer_label: string | null;
+  total_rooms: number;
+  available_rooms: number;
+};
+
+// Group rooms by name into the customer-facing types, preserving the order in
+// which the first room of each type appears (already sorted by sort_order).
+export function aggregateSuiteTypes(rooms: RoomWithFree[]): SuiteType[] {
+  const order: string[] = [];
+  const byName = new Map<string, RoomWithFree[]>();
+  for (const r of rooms) {
+    if (!byName.has(r.name)) { byName.set(r.name, []); order.push(r.name); }
+    byName.get(r.name)!.push(r);
+  }
+  return order.map((name) => {
+    const group = byName.get(name)!;
+    const rep = group[0];
+    // Type offer = the best (highest) offer configured on any room of the type.
+    let offerPercent = 0, offerLabel: string | null = null;
+    for (const r of group) {
+      const pct = r.offer_active ? Number(r.offer_percent) || 0 : 0;
+      if (pct > offerPercent) { offerPercent = pct; offerLabel = r.offer_label; }
+    }
+    return {
+      name,
+      subtitle: rep.subtitle,
+      description: rep.description,
+      images: rep.images?.length ? rep.images : [],
+      amenities: rep.amenities || [],
+      base_price: Number(rep.base_price) || 0,
+      gst_rate: Number(rep.gst_rate) || 0,
+      max_guests: Math.max(...group.map((r) => r.max_guests)),
+      offer_active: offerPercent > 0,
+      offer_percent: offerPercent,
+      offer_label: offerLabel,
+      total_rooms: group.length,
+      available_rooms: group.filter((r) => r.is_free).length,
+    };
+  });
+}
+
+// Per-room charge for a type booking (base + type offer + GST), for `nights`.
+export function computeTypeCharge(base: number, gstRate: number, offerPercent: number, nights: number) {
+  const baseAmt = round2(base * nights);
+  const discount = round2(baseAmt * (offerPercent / 100));
+  const taxable = round2(baseAmt - discount);
+  const gst = round2(taxable * (gstRate / 100));
+  const total = round2(taxable + gst);
+  return { base: baseAmt, discount, gstRate, gst, total };
+}
+
 export type SuiteBookingInput = {
   room_id: string;
   customer_name: string;
@@ -102,7 +192,7 @@ export function validateSuiteBooking(input: SuiteBookingInput): string | null {
   if (!input.room_id) return 'Please select a room';
   if (!input.customer_name?.trim()) return 'Name is required';
   if (!input.customer_phone?.trim()) return 'Phone is required';
-  if (!/^\+?[0-9\s-]{7,15}$/.test(input.customer_phone.trim())) return 'Enter a valid phone number';
+  if (input.customer_phone.replace(/\D/g, '').length !== 10) return 'Enter a valid 10-digit phone number';
   if (!input.check_in || !input.check_out) return 'Check-in and check-out dates are required';
   if (nightsBetween(input.check_in, input.check_out) < 1) return 'Check-out must be after check-in';
   return null;
