@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/db';
 import { verifyWebhookSignature } from '@/lib/razorpay';
+import { isOurRazorpayOrder } from '@/lib/refundGuard';
 import { sendSuiteGroupSmsOnce } from '@/lib/suiteGroup';
 
 export const runtime = 'nodejs';
@@ -31,6 +32,14 @@ export async function POST(req: NextRequest) {
   const orderId: string | undefined = payment?.order_id;
   const paymentId: string | undefined = payment?.id;
   if (!orderId) return NextResponse.json({ success: true, ignored: true });
+
+  // SHARED Razorpay account: only ever act on payments tied to OUR OWN orders.
+  // Any other app's payment (e.g. Café Tria) is acknowledged and skipped — we
+  // never refund or mutate state for it. Ack 200 so Razorpay stops retrying.
+  if (!(await isOurRazorpayOrder(orderId))) {
+    console.warn('[suite webhook] ignored: not our payment', { orderId, paymentId, type });
+    return NextResponse.json({ success: true, ignored: 'not our payment' });
+  }
 
   try {
     if (type === 'payment.captured') {

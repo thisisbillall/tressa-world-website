@@ -7,7 +7,7 @@ import {
   getRoomsWithAvailability,
   nightsBetween,
 } from '@/lib/suiteRooms';
-import { isRazorpayConfigured, rzp, RZP_KEY_ID } from '@/lib/razorpay';
+import { isRazorpayConfigured, rzp, RZP_KEY_ID, RZP_APP_TAG } from '@/lib/razorpay';
 import { guardDbConfigured, jsonError } from '@/lib/apiError';
 import { generateBookingCode } from '@/lib/bookingCode';
 
@@ -127,6 +127,7 @@ export async function POST(req: NextRequest) {
         currency: 'INR',
         receipt: `suitegrp_${groupId.slice(0, 12)}`,
         notes: {
+          app: RZP_APP_TAG,
           group_id: groupId, group_ref: groupRef, type: body.type_name,
           rooms: created.map((b) => b.room_number).join(','), nights: String(nights),
           customer_name: body.customer_name, customer_phone: body.customer_phone,

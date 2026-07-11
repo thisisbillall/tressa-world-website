@@ -5,6 +5,12 @@ export const RZP_KEY_ID = process.env.RAZORPAY_KEY_ID || '';
 export const RZP_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '';
 export const RZP_WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET || '';
 
+// This Razorpay account is SHARED with other apps (e.g. the "Café Tria"
+// QR-ordering app). Every order we create is stamped with this tag in its
+// `notes.app` so we can positively tell OUR orders apart from the other apps'
+// on webhooks — and never touch (least of all refund) a payment that isn't ours.
+export const RZP_APP_TAG = 'tressa-website';
+
 export const isRazorpayConfigured = () => !!RZP_KEY_ID && !!RZP_KEY_SECRET;
 
 let _rzp: Razorpay | null = null;

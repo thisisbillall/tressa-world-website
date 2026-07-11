@@ -8,7 +8,7 @@ import {
   nightsBetween,
   validateBooking,
 } from '@/lib/bookings';
-import { isRazorpayConfigured, rzp, RZP_KEY_ID } from '@/lib/razorpay';
+import { isRazorpayConfigured, rzp, RZP_KEY_ID, RZP_APP_TAG } from '@/lib/razorpay';
 import { guardDbConfigured, jsonError } from '@/lib/apiError';
 import { generateBookingCode } from '@/lib/bookingCode';
 import { sendBookingConfirmationSmsOnce } from '@/lib/twilio';
@@ -239,6 +239,7 @@ export async function POST(req: NextRequest) {
           currency: 'INR',
           receipt: `booking_${booking.id.slice(0, 8)}_${Date.now().toString().slice(-6)}`,
           notes: {
+            app: RZP_APP_TAG,
             booking_id: booking.id,
             venue: body.venue,
             suite_name: resolvedSuiteName || '',
