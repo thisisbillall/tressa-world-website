@@ -10,7 +10,7 @@ Rooftop · Restaurant · Bar · Suites. Cinematic, scroll-driven hospitality sit
 - Lenis (buttery smooth scroll)
 
 ## Run
-```bash
+```bash   
 npm install
 npm run dev
 ```
