@@ -162,7 +162,7 @@ export default function PayPage() {
               {paying ? 'Opening payment…' : `Pay ${money(info.total_amount)}`}
             </button>
             <p className="text-[11px] text-stone-400 text-center mt-3">
-              Secure payment via Razorpay. Your room is held for 60 minutes.
+              Secure payment via Razorpay. Your room is held for 20 minutes.
             </p>
           </>
         ) : null}

@@ -211,7 +211,7 @@ export async function cleanupStaleSuiteBookings(maxAgeMinutes = 15): Promise<num
         WHERE status IN ('pending','cancelled')
           AND payment_status NOT IN ('paid','refunded')
           AND created_at < NOW() - (
-            (CASE WHEN booking_source = 'reception-link' THEN '60' ELSE $1 END) || ' minutes'
+            (CASE WHEN booking_source = 'reception-link' THEN '20' ELSE $1 END) || ' minutes'
           )::interval`,
       [String(maxAgeMinutes)],
     );

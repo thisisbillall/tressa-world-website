@@ -31,7 +31,7 @@ function InternalBooking() {
   const [authed, setAuthed] = useState(false);
 
   useEffect(() => {
-    const k = sessionStorage.getItem(AUTH_KEY);
+    const k = localStorage.getItem(AUTH_KEY);
     if (k) { setStaffKey(k); setAuthed(true); }
   }, []);
 
@@ -59,6 +59,30 @@ function InternalBooking() {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ ref: string; total: number; sms: boolean; url: string } | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const copyLink = async () => {
+    if (!result) return;
+    try { await navigator.clipboard.writeText(result.url); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* clipboard blocked — link is still visible */ }
+  };
+
+  const cancelHold = async () => {
+    if (!result) return;
+    setCancelling(true); setErr(null);
+    try {
+      const r = await fetch('/api/suite-bookings/internal-cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-internal-secret': staffKey },
+        body: JSON.stringify({ group_ref: result.ref }),
+      });
+      const j = await r.json();
+      if (j.success && j.released > 0) { setResult(null); setErr(null); void loadTypes(); }
+      else if (j.success) { setErr(j.note || 'Nothing to cancel — the guest may have already paid.'); }
+      else { setErr(j.error || 'Could not cancel'); }
+    } catch { setErr('Could not cancel'); }
+    finally { setCancelling(false); }
+  };
 
   const nights = nightsBetween(checkIn, checkOut);
 
@@ -110,7 +134,7 @@ function InternalBooking() {
         }),
       });
       const j = await r.json();
-      if (r.status === 401) { setErr('Wrong staff key.'); setAuthed(false); sessionStorage.removeItem(AUTH_KEY); return; }
+      if (r.status === 401) { setErr('Wrong staff key.'); setAuthed(false); localStorage.removeItem(AUTH_KEY); return; }
       if (j.success) {
         setResult({ ref: j.group.group_ref, total: j.total_amount, sms: j.sms_sent, url: j.pay_url });
       } else {
@@ -130,7 +154,7 @@ function InternalBooking() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (staffKey.trim()) { sessionStorage.setItem(AUTH_KEY, staffKey.trim()); setAuthed(true); }
+            if (staffKey.trim()) { localStorage.setItem(AUTH_KEY, staffKey.trim()); setAuthed(true); }
           }}
           className="bg-white border border-[#5E141E]/15 rounded-2xl p-8 w-full max-w-sm shadow-[0_30px_80px_rgba(94,20,30,0.1)]"
         >
@@ -169,14 +193,34 @@ function InternalBooking() {
             {result.url}
           </a>
           <p className="text-[11px] text-stone-400 mt-4">
-            The guest pays via the link. Once paid, it confirms automatically and appears in the reception dashboard.
+            The guest pays via the link. Once paid, it confirms automatically. The room is held for 20 minutes.
           </p>
-          <button
-            onClick={() => { setResult(null); void loadTypes(); }}
-            className="mt-5 rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium hover:bg-stone-50"
-          >
-            New booking
-          </button>
+
+          {err && <p className="mt-3 text-sm text-rose-600 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2">{err}</p>}
+
+          <div className="mt-5 flex flex-col gap-2">
+            <div className="flex gap-2">
+              <button
+                onClick={copyLink}
+                className="flex-1 rounded-xl border border-[#5E141E]/30 text-[#5E141E] px-3 py-2.5 text-sm font-medium hover:bg-[#5E141E]/[0.05] transition-colors"
+              >
+                {copied ? 'Copied ✓' : 'Copy pay link'}
+              </button>
+              <button
+                onClick={cancelHold}
+                disabled={cancelling}
+                className="flex-1 rounded-xl border border-rose-300 text-rose-600 px-3 py-2.5 text-sm font-medium hover:bg-rose-50 transition-colors disabled:opacity-60"
+              >
+                {cancelling ? 'Cancelling…' : 'Cancel & free room'}
+              </button>
+            </div>
+            <button
+              onClick={() => { setResult(null); setErr(null); void loadTypes(); }}
+              className="rounded-xl bg-[#5E141E] text-white px-4 py-2.5 text-sm font-medium hover:bg-[#4a0f18] transition-colors"
+            >
+              New booking
+            </button>
+          </div>
         </div>
       </div>
     );

@@ -167,7 +167,7 @@ export async function POST(req: NextRequest) {
         `TRESSA — Hi ${body.customer_name.trim()}, your ${quantity} ${body.type_name} ` +
         `(${nights} night${nights > 1 ? 's' : ''}) is reserved.\n` +
         `Pay ${amountStr} to confirm: ${payUrl}\n` +
-        `Hold expires in 60 min. — Team Tressa`;
+        `Hold expires in 20 min. — Team Tressa`;
       const res = await sendSms(phone, msg);
       smsSent = res.success;
       if (!res.success) console.error('[internal-book] sms failed:', res.error);
