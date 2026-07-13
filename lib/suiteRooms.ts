@@ -202,11 +202,17 @@ export function validateSuiteBooking(input: SuiteBookingInput): string | null {
 // closes the Razorpay popup would otherwise keep the room's dates locked.
 export async function cleanupStaleSuiteBookings(maxAgeMinutes = 15): Promise<number> {
   try {
+    // Reception "pay by SMS link" holds (booking_source='reception-link') get a
+    // longer grace so a guest paying from the SMS link is never swept
+    // mid-payment (which would orphan a captured payment). Public web holds keep
+    // the normal short window.
     const { rowCount } = await pool.query(
       `DELETE FROM suite_bookings
         WHERE status IN ('pending','cancelled')
           AND payment_status NOT IN ('paid','refunded')
-          AND created_at < NOW() - ($1 || ' minutes')::interval`,
+          AND created_at < NOW() - (
+            (CASE WHEN booking_source = 'reception-link' THEN '60' ELSE $1 END) || ' minutes'
+          )::interval`,
       [String(maxAgeMinutes)],
     );
     return rowCount ?? 0;
