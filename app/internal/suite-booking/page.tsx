@@ -23,6 +23,16 @@ type SuiteType = {
 const money = (n: number) => `₹${Math.round(n).toLocaleString('en-IN')}`;
 const nightsBetween = (a: string, b: string) =>
   a && b ? Math.max(0, Math.round((+new Date(b) - +new Date(a)) / 86400000)) : 0;
+const todayISO = () => {
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+};
+const addDaysISO = (iso: string, d: number) => {
+  const [y, m, dd] = iso.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, dd));
+  dt.setUTCDate(dt.getUTCDate() + d);
+  return dt.toISOString().slice(0, 10);
+};
 
 function InternalBooking() {
   const qp = useSearchParams();
@@ -36,8 +46,8 @@ function InternalBooking() {
   }, []);
 
   // Prefilled from the webapp redirect.
-  const [checkIn, setCheckIn] = useState('');
-  const [checkOut, setCheckOut] = useState('');
+  const [checkIn, setCheckIn] = useState(todayISO());
+  const [checkOut, setCheckOut] = useState(addDaysISO(todayISO(), 1));
   const [guests, setGuests] = useState('2');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -45,8 +55,9 @@ function InternalBooking() {
   const [quantity, setQuantity] = useState('1');
 
   useEffect(() => {
-    setCheckIn(qp.get('check_in') || '');
-    setCheckOut(qp.get('check_out') || '');
+    const ci = qp.get('check_in') || todayISO();
+    setCheckIn(ci);
+    setCheckOut(qp.get('check_out') || addDaysISO(ci, 1));
     setGuests(qp.get('guests') || '2');
     setName(qp.get('name') || '');
     setPhone((qp.get('phone') || '').replace(/\D/g, '').slice(-10));

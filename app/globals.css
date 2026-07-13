@@ -107,3 +107,22 @@ html.lenis, html.lenis body { height: auto; }
 @keyframes chatOrbit { to { transform: rotate(360deg); } }
 .chat-orbit { animation: chatOrbit 4s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .chat-orbit { animation: none; } }
+
+/* iOS Safari renders <input type="date"> with a collapsed height and a
+   center-aligned value that overflows rounded card inputs. Normalize so date
+   fields size and align like normal text inputs on every device. */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 44px;
+  box-sizing: border-box;
+  background-color: #fff;
+}
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0;
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+  margin-left: auto;
+  opacity: 0.55;
+}

@@ -6,9 +6,14 @@
 // (maroon · gold · cream, Playfair serif headings).
 
 import { useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CHATBOT_META } from '@/lib/chatbotKnowledge';
+
+// Routes where the concierge is hidden — all booking/payment flows (public +
+// internal), so it never overlaps the booking UI.
+const HIDE_CHAT_ON = /^\/(booking|suites|pay|internal)(\/|$)/;
 
 type Msg = { role: 'user' | 'assistant'; content: string };
 
@@ -22,6 +27,9 @@ export default function ChatWidget() {
   const [busy, setBusy] = useState(false);
   const [teased, setTeased] = useState(false); // whether a nudge is visible
   const [teaseIdx, setTeaseIdx] = useState(0); // which rotating nudge to show
+
+  const pathname = usePathname();
+  const hideChat = HIDE_CHAT_ON.test(pathname || '');
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -137,6 +145,9 @@ export default function ChatWidget() {
     e.preventDefault();
     send(input);
   }
+
+  // Hidden on booking/payment pages (all hooks above run unconditionally).
+  if (hideChat) return null;
 
   return (
     <>
