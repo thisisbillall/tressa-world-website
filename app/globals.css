@@ -117,6 +117,11 @@ input[type="date"] {
   min-height: 44px;
   box-sizing: border-box;
   background-color: #fff;
+  /* iOS gives date inputs an intrinsic content width that overflows a grid /
+     flex cell; these let it shrink to the container instead of breaking out. */
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 input[type="date"]::-webkit-date-and-time-value {
   text-align: left;
