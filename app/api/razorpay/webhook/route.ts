@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/db';
 import { verifyWebhookSignature } from '@/lib/razorpay';
-import { isOurRazorpayOrder } from '@/lib/refundGuard';
+import { isOurDiningOrder } from '@/lib/refundGuard';
 import { sendBookingConfirmationSmsOnce } from '@/lib/twilio';
 
 export const runtime = 'nodejs';
@@ -34,12 +34,12 @@ export async function POST(req: NextRequest) {
 
   if (!orderId) return NextResponse.json({ success: true, ignored: true });
 
-  // SHARED Razorpay account: only ever act on payments tied to OUR OWN orders.
-  // Any other app's payment (e.g. Café Tria) is acknowledged and skipped — we
-  // never refund or mutate state for it. Ack 200 so Razorpay stops retrying.
-  if (!(await isOurRazorpayOrder(orderId))) {
-    console.warn('[rzp webhook] ignored: not our payment', { orderId, paymentId, type });
-    return NextResponse.json({ success: true, ignored: 'not our payment' });
+  // Shared account + two of our own webhooks: this endpoint acts ONLY on our
+  // DINING orders. Suite payments and the café's are acknowledged and skipped —
+  // never refunded, never mutated. Ack 200 so Razorpay stops retrying.
+  if (!(await isOurDiningOrder(orderId))) {
+    console.warn('[rzp webhook] ignored: not a dining payment', { orderId, paymentId, type });
+    return NextResponse.json({ success: true, ignored: 'not our dining payment' });
   }
 
   if (type === 'payment.captured') {
@@ -73,13 +73,11 @@ export async function POST(req: NextRequest) {
       }
     }
     if (rows.length === 0 && paymentId) {
-      console.warn('[rzp webhook] payment.captured for missing/cancelled booking, refunding', { orderId, paymentId });
-      try {
-        const { rzp } = await import('@/lib/razorpay');
-        await rzp().payments.refund(paymentId, { speed: 'optimum' });
-      } catch (refundErr) {
-        console.error('[rzp webhook] auto-refund failed — manual action required', { orderId, paymentId, refundErr });
-      }
+      // LOG-ONLY: we no longer auto-refund. A captured dining payment with no
+      // matching booking row is flagged for manual review instead of being
+      // refunded automatically (auto-refund previously misfired on a shared
+      // account). Handle any real orphan manually from the Razorpay dashboard.
+      console.warn('[rzp webhook] ORPHAN dining capture — NOT auto-refunding (log-only). Review manually:', { orderId, paymentId });
     }
   } else if (type === 'payment.failed') {
     // Also flip status to 'cancelled' so the partial unique index releases the

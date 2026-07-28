@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/db';
 import { verifyWebhookSignature } from '@/lib/razorpay';
-import { isOurRazorpayOrder } from '@/lib/refundGuard';
+import { isOurSuiteOrder } from '@/lib/refundGuard';
 import { sendSuiteGroupSmsOnce } from '@/lib/suiteGroup';
 
 export const runtime = 'nodejs';
@@ -33,12 +33,12 @@ export async function POST(req: NextRequest) {
   const paymentId: string | undefined = payment?.id;
   if (!orderId) return NextResponse.json({ success: true, ignored: true });
 
-  // SHARED Razorpay account: only ever act on payments tied to OUR OWN orders.
-  // Any other app's payment (e.g. Café Tria) is acknowledged and skipped — we
-  // never refund or mutate state for it. Ack 200 so Razorpay stops retrying.
-  if (!(await isOurRazorpayOrder(orderId))) {
-    console.warn('[suite webhook] ignored: not our payment', { orderId, paymentId, type });
-    return NextResponse.json({ success: true, ignored: 'not our payment' });
+  // Shared account + two of our own webhooks: this endpoint acts ONLY on our
+  // SUITE orders. Dining payments and the café's are acknowledged and skipped —
+  // never refunded, never mutated. Ack 200 so Razorpay stops retrying.
+  if (!(await isOurSuiteOrder(orderId))) {
+    console.warn('[suite webhook] ignored: not a suite payment', { orderId, paymentId, type });
+    return NextResponse.json({ success: true, ignored: 'not our suite payment' });
   }
 
   try {
@@ -59,16 +59,11 @@ export async function POST(req: NextRequest) {
         try { await sendSuiteGroupSmsOnce(pool, rows[0].group_id); }
         catch (e) { console.error('[suite webhook] sms error:', e); }
       }
-      // Paid but no booking (row was swept/cancelled before capture) → refund so
-      // we never keep money for a room we can't honour.
+      // LOG-ONLY: we no longer auto-refund. A captured suite payment with no
+      // matching booking row is flagged for manual review instead of being
+      // refunded automatically. Handle any real orphan from the dashboard.
       if (rows.length === 0 && paymentId) {
-        console.warn('[suite webhook] captured for missing booking, refunding', { orderId, paymentId });
-        try {
-          const { rzp } = await import('@/lib/razorpay');
-          await rzp().payments.refund(paymentId, { speed: 'optimum' });
-        } catch (refundErr) {
-          console.error('[suite webhook] auto-refund failed — manual action required', { orderId, paymentId, refundErr });
-        }
+        console.warn('[suite webhook] ORPHAN suite capture — NOT auto-refunding (log-only). Review manually:', { orderId, paymentId });
       }
     } else if (type === 'payment.failed') {
       await pool.query(
