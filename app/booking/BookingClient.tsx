@@ -617,14 +617,18 @@ export default function BookingClient() {
                         className="w-full bg-transparent border-b border-maroon/20 text-ink text-sm py-2 focus:outline-none focus:border-gold transition-colors"
                       />
                     </Field>
-                    <Field label="Guests" icon={<Users size={13} />}>
+                    <Field label="Guest Count" icon={<Users size={13} />}>
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         required
-                        min={1}
-                        max={20}
-                        value={guests}
-                        onChange={(e) => setGuests(Math.max(1, Math.min(20, Number(e.target.value) || 1)))}
+                        placeholder="e.g. 2"
+                        value={guests === 0 ? '' : String(guests)}
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/\D/g, '').slice(0, 2);
+                          setGuests(digits === '' ? 0 : Math.min(20, parseInt(digits, 10)));
+                        }}
+                        onBlur={() => { if (!guests || guests < 1) setGuests(1); }}
                         className="w-full bg-transparent border-b border-maroon/20 text-ink text-sm py-2 focus:outline-none focus:border-gold transition-colors"
                       />
                     </Field>
