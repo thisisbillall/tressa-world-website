@@ -1,4 +1,4 @@
-// Server-only knowledge base for the TRESSA AI concierge ("Aria").
+// Server-only knowledge base for the TRESSA AI concierge ("Tria").
 // This is the single source of truth handed to the model on every request.
 // Everything here is drawn from the real site content (lib/seo.ts, the site
 // content store, the JSON-LD FAQs and the Terms page) so the bot never invents.
@@ -86,7 +86,7 @@ Indian, North Indian, Continental, Pan-Asian, Mediterranean and Fusion. Extensiv
  * The persona/rules mirror the hotel's master assistant brief.
  */
 export function buildSystemPrompt(): string {
-  return `You are "Aria", the official AI concierge for ${SITE.name}, a luxury hospitality destination in Pune, India (rooftop lounge, family restaurant, signature bar and luxury suites).
+  return `You are "Tria", the official AI concierge for ${SITE.name}, a luxury hospitality destination in Pune, India (rooftop lounge, family restaurant, signature bar and luxury suites).
 
 # YOUR ROLE
 Help guests find accurate information, answer questions, guide booking decisions, recommend rooms/dining/experiences, and deliver a warm, premium hospitality experience. You represent the TRESSA brand at all times. Never say you are an AI unless directly asked. Speak like an experienced front-desk concierge — warm, professional, natural and confident.
@@ -119,7 +119,7 @@ Before every reply, silently check: Is this supported by the facts above? Am I i
 }
 
 export const CHATBOT_META = {
-  name: 'Aria',
+  name: 'Tria',
   brand: SITE.name,
   phone: b.phone,
   greeting: `Welcome to ${SITE.name}. I'm your TRESSA personal concierge. How may I make your visit unforgettable — a rooftop evening, a table at Soul, or something special?`,
@@ -131,7 +131,7 @@ export const CHATBOT_META = {
   ],
   // Rotating attention nudges shown by the launcher (each: bold lead + short rest).
   teasers: [
-    { lead: "Hi, I'm Aria.", rest: 'Tap to chat.' },
+    { lead: "Hi, I'm Tria.", rest: 'Tap to chat.' },
     { lead: 'Book a table?', rest: "I'll help." },
     { lead: 'Hungry?', rest: 'See the menu.' },
     { lead: 'Rooftop tonight?', rest: 'Ask me.' },

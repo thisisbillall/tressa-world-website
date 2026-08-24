@@ -1,6 +1,6 @@
 'use client';
 
-// TRESSA World — "Aria" AI concierge.
+// TRESSA World — "Tria" AI concierge.
 // A premium floating chat experience anchored to the bottom-right of every page.
 // Streams replies from /api/chat (Grok / xAI) and is styled in the house palette
 // (maroon · gold · cream, Playfair serif headings).

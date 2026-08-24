@@ -1,10 +1,14 @@
-// TRESSA AI concierge — streaming proxy to the Grok (xAI) API.
+// TRESSA AI concierge ("Tria") — streaming proxy to an OpenAI-compatible chat API.
 // The API key stays server-side; the browser only talks to this route.
+// Currently configured (via .env) to use Groq Cloud, not xAI's Grok — the
+// GROK_* env var names predate that switch. Groq periodically decommissions
+// older models; if the bot stops responding, check server logs for a
+// "model_not_found" error and pick a live model from GET {base}/models.
 //
 // Env:
-//   GROK_API_KEY   (required)  — get a free key at https://console.x.ai
-//   GROK_MODEL     (optional)  — defaults to "grok-3-mini" (fast + free-tier friendly)
-//   GROK_BASE_URL  (optional)  — defaults to xAI's OpenAI-compatible endpoint
+//   GROK_API_KEY   (required)  — Groq Cloud key: https://console.groq.com
+//   GROK_MODEL     (optional)  — defaults to "openai/gpt-oss-20b"
+//   GROK_BASE_URL  (optional)  — defaults to Groq's OpenAI-compatible endpoint
 
 import { NextRequest } from 'next/server';
 import { buildSystemPrompt } from '@/lib/chatbotKnowledge';
@@ -12,8 +16,8 @@ import { buildSystemPrompt } from '@/lib/chatbotKnowledge';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const BASE_URL = process.env.GROK_BASE_URL || 'https://api.x.ai/v1';
-const MODEL = process.env.GROK_MODEL || 'grok-3-mini';
+const BASE_URL = process.env.GROK_BASE_URL || 'https://api.groq.com/openai/v1';
+const MODEL = process.env.GROK_MODEL || 'openai/gpt-oss-20b';
 const API_KEY = process.env.GROK_API_KEY || process.env.XAI_API_KEY;
 
 type Msg = { role: 'user' | 'assistant'; content: string };
