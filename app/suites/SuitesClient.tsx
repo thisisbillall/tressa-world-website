@@ -78,6 +78,8 @@ function loadRazorpay(): Promise<boolean> {
 }
 
 const FALLBACK_IMG = 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1400&q=80';
+// Tiny theme-coloured blur shown instantly while the real image loads.
+const BLUR = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAGCAIAAABxZ0isAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAEUlEQVR4nGN4cG0XVsQwkBIAULR1AbZ2244AAAAASUVORK5CYII=';
 const invoiceHref = (ref: string) => `/api/suite-bookings/invoice/${encodeURIComponent(ref)}`;
 function autoDownloadInvoice(ref: string) {
   if (typeof document === 'undefined') return;
@@ -128,8 +130,9 @@ export default function SuitesClient() {
       {/* hero */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0">
-          <Image src="https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=2000&q=80"
-            alt="TRESSA premium suite" fill priority quality={85} sizes="100vw" className="object-cover" />
+          <Image src="https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=1600&q=70"
+            alt="TRESSA premium suite" fill priority quality={70} sizes="100vw"
+            placeholder="blur" blurDataURL={BLUR} className="object-cover" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-[#fdf8ea]" />
         </div>
         <div className="relative px-5 md:px-[8%] pt-6 md:pt-8 pb-5 md:pb-6">
@@ -204,7 +207,8 @@ function TypeCard({ type, nights, index, onBook }: { type: SuiteType; nights: nu
       className="group bg-white flex flex-col overflow-hidden shadow-[0_1px_0_rgba(94,20,30,0.04)] hover:shadow-[0_20px_50px_-20px_rgba(94,20,30,0.35)] transition-shadow duration-500"
     >
       <button onClick={onBook} className="relative aspect-[4/3] overflow-hidden text-left">
-        <Image src={img} alt={type.name} fill quality={78} sizes="(max-width:768px) 100vw, 33vw"
+        <Image src={img} alt={type.name} fill quality={72} sizes="(max-width:768px) 100vw, 33vw"
+          placeholder="blur" blurDataURL={BLUR}
           className="object-cover transition-transform duration-700 group-hover:scale-105" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent opacity-70" />
         {type.offer_active && (
@@ -348,7 +352,8 @@ function BookingModal({ type, nights, checkIn, checkOut, qty, setCheckIn, setChe
         <div className="md:grid md:grid-cols-2">
           {/* image side */}
           <div className="relative h-56 sm:h-72 md:h-full min-h-[260px]">
-            <Image src={images[imgIdx] || FALLBACK_IMG} alt={type.name} fill quality={82} sizes="(max-width:768px) 100vw, 50vw" className="object-cover" />
+            <Image src={images[imgIdx] || FALLBACK_IMG} alt={type.name} fill quality={72} sizes="(max-width:768px) 100vw, 50vw"
+              placeholder="blur" blurDataURL={BLUR} className="object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
             {images.length > 1 && (
               <>
