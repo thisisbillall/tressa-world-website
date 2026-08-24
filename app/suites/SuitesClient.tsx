@@ -231,8 +231,12 @@ function TypeCard({ type, nights, index, onBook }: { type: SuiteType; nights: nu
             <Sparkles size={12} /> {type.offer_label || `${type.offer_percent}% Off`}
           </span>
         )}
-        <span className="absolute bottom-3 left-3 text-[10px] tracking-[0.15em] uppercase px-2 py-1 bg-maroon/85 text-cream">
-          {type.total_rooms} room{type.total_rooms > 1 ? 's' : ''}
+        <span className="absolute bottom-3 left-3 inline-flex items-center gap-2 px-3.5 py-2 bg-maroon-dark/80 backdrop-blur-md border border-gold/40 text-cream text-[11px] font-semibold tracking-[0.12em] uppercase shadow-[0_4px_16px_rgba(0,0,0,0.4)]">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-gold" />
+          </span>
+          {type.total_rooms} Room{type.total_rooms > 1 ? 's' : ''}
         </span>
       </button>
 
