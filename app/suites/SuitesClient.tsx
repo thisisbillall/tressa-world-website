@@ -160,7 +160,7 @@ export default function SuitesClient() {
             <motion.h2 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, delay: 0.1 }}
               className="font-serif text-4xl md:text-6xl font-light text-cream leading-[1.05]">Aura Suites</motion.h2>
             <motion.p initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, delay: 0.2 }}
-              className="mt-5 text-sm md:text-base text-cream/85 leading-relaxed max-w-xl">
+              className="mt-5 text-sm md:text-base text-cream leading-relaxed max-w-xl">
               Choose your suite, pick how many rooms and your dates, and book in one secure payment —
               from <span className="text-gold font-medium">₹4,000</span> / night plus GST.
             </motion.p>
