@@ -205,7 +205,7 @@ export default function SuitesClient() {
 /* ------------------------------------------------------------- hero badge */
 function HeroBadge({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
-    <span className="inline-flex items-center gap-2 px-3 py-2 border border-gold/50 bg-black/25 backdrop-blur-sm text-cream text-[10px] tracking-[0.15em] uppercase">
+    <span className="inline-flex items-center gap-2 px-3.5 py-2.5 border border-gold/40 bg-maroon-dark/85 backdrop-blur-md text-cream text-[10px] tracking-[0.15em] uppercase shadow-[0_6px_20px_rgba(0,0,0,0.35)]">
       <span className="text-gold">{icon}</span>{label}
     </span>
   );
