@@ -147,28 +147,29 @@ export default function SuitesClient() {
   };
 
   return (
-    <main className="min-h-screen bg-[#fdf8ea] text-ink">
+    <main className="relative min-h-screen text-cream">
+      {/* full-page background image behind all content */}
+      <div className="fixed inset-0 -z-10">
+        <ShimmerImage src="https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=1600&q=70"
+          alt="" fill priority quality={70} sizes="100vw"
+          placeholder="blur" blurDataURL={BLUR} className="object-cover" />
+        <div className="absolute inset-0 bg-[#160608]/70" />
+      </div>
+
       {/* hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0">
-          <ShimmerImage src="https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=1600&q=70"
-            alt="TRESSA premium suite" fill priority quality={70} sizes="100vw"
-            placeholder="blur" blurDataURL={BLUR} className="object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-[#fdf8ea]" />
-        </div>
+      <section className="relative">
         <div className="relative px-5 md:px-[8%] pt-6 md:pt-8 pb-5 md:pb-6">
           <Link href="/" className="inline-flex items-center gap-1.5 text-[10px] md:text-[11px] tracking-[0.25em] uppercase text-cream/80 hover:text-gold transition-colors">
             <ArrowLeft size={14} /> Back to TRESSA
           </Link>
           <div className="mt-8 md:mt-10 max-w-2xl">
             <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}
-              className="text-[11px] tracking-[0.5em] uppercase text-gold mb-4">TRESSA · Stay With Us</motion.p>
+              className="text-[9px] md:text-[11px] tracking-[0.4em] md:tracking-[0.5em] uppercase text-gold mb-3 md:mb-4">TRESSA · Stay With Us</motion.p>
             <motion.h2 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, delay: 0.1 }}
-              className="font-serif text-4xl md:text-6xl font-light text-cream leading-[1.05]">Aura Suites</motion.h2>
+              className="font-serif text-5xl md:text-6xl font-light text-cream leading-[1.02]">Aura Suites</motion.h2>
             <motion.p initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, delay: 0.2 }}
-              className="mt-5 text-sm md:text-base text-cream leading-relaxed max-w-xl">
-              Choose your suite, pick how many rooms and your dates, and book in one secure payment —
-              from <span className="text-gold font-medium">₹4,000</span> / night plus GST.
+              className="mt-4 text-[12.5px] md:text-base text-cream/90 leading-relaxed max-w-xl">
+              Choose your suite, pick how many rooms and your dates,<br className="hidden sm:block" /> and book in one secure payment<br className="sm:hidden" /> <span className="whitespace-nowrap">from <span className="text-gold font-medium">₹4,000</span> / night plus GST.</span>
             </motion.p>
             <div className="mt-7 hidden sm:flex flex-wrap gap-2.5">
               <HeroBadge icon={<ShieldCheck size={14} />} label="Secure payment" />
@@ -189,7 +190,9 @@ export default function SuitesClient() {
         )}
         {types && types.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-[1400px] mx-auto">
-            {types.map((t, i) => <TypeCard key={t.name} type={t} nights={nights} index={i} onBook={() => openBooking(t)} />)}
+            {[...types]
+              .sort((a, b) => Number(b.booking_enabled) - Number(a.booking_enabled))
+              .map((t, i) => <TypeCard key={t.name} type={t} nights={nights} index={i} onBook={() => openBooking(t)} />)}
           </div>
         )}
       </section>
@@ -211,7 +214,7 @@ export default function SuitesClient() {
 /* ------------------------------------------------------------- hero badge */
 function HeroBadge({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
-    <span className="inline-flex items-center gap-2 px-3.5 py-2.5 border border-gold/40 bg-maroon-dark/85 backdrop-blur-md text-cream text-[10px] tracking-[0.15em] uppercase shadow-[0_6px_20px_rgba(0,0,0,0.35)]">
+    <span className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-white/25 bg-white/10 backdrop-blur-xl text-cream text-[10px] tracking-[0.18em] uppercase [box-shadow:0_8px_28px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.2)]">
       <span className="text-gold">{icon}</span>{label}
     </span>
   );
@@ -226,7 +229,7 @@ function TypeCard({ type, nights, index, onBook }: { type: SuiteType; nights: nu
     <motion.article
       initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }}
       transition={{ duration: 0.6, delay: Math.min(index * 0.08, 0.3) }}
-      className="group bg-white flex flex-col overflow-hidden shadow-[0_1px_0_rgba(94,20,30,0.04)] hover:shadow-[0_20px_50px_-20px_rgba(94,20,30,0.35)] transition-shadow duration-500"
+      className="group flex flex-col overflow-hidden rounded-2xl bg-white/[0.88] backdrop-blur-xl border border-maroon/40 [box-shadow:0_12px_40px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.55)] hover:border-maroon/60 hover:[box-shadow:0_24px_60px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.6)] transition-all duration-500"
     >
       <button
         onClick={onBook}
