@@ -116,8 +116,22 @@ export default function SuitesClient() {
   const [checkOut, setCheckOut] = useState(addDaysISO(todayISO(), 1));
   const [selectedName, setSelectedName] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
+  const [showLoader, setShowLoader] = useState(true);
 
   const nights = nightsBetween(checkIn, checkOut);
+
+  // Branded preloader: hold it until the first availability load resolves
+  // (or a fail-safe timeout), then fade out.
+  useEffect(() => {
+    if (types !== null || loadError) {
+      const t = setTimeout(() => setShowLoader(false), 400);
+      return () => clearTimeout(t);
+    }
+  }, [types, loadError]);
+  useEffect(() => {
+    const t = setTimeout(() => setShowLoader(false), 6000);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => { void loadRazorpay(); }, []);
   useEffect(() => { if (nightsBetween(checkIn, checkOut) < 1) setCheckOut(addDaysISO(checkIn, 1)); }, [checkIn]); // eslint-disable-line
@@ -148,6 +162,35 @@ export default function SuitesClient() {
 
   return (
     <main className="relative min-h-screen text-cream">
+      {/* Branded preloader — TRESSA logo with a gold line rotating around it. */}
+      <AnimatePresence>
+        {showLoader && (
+          <motion.div
+            key="suites-loader"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6, ease: 'easeInOut' }}
+            className="fixed inset-0 z-[120] flex flex-col items-center justify-center bg-[#160608]"
+            role="status"
+            aria-label="Loading Aura Suites"
+          >
+            <div className="relative flex h-36 w-36 items-center justify-center md:h-40 md:w-40">
+              <span className="loader-ring" aria-hidden />
+              <Image
+                src="/brand/tressa-logo-mark.png"
+                alt="TRESSA"
+                width={92}
+                height={78}
+                priority
+                className="relative z-10 h-auto w-[84px] md:w-[96px] drop-shadow-[0_6px_24px_rgba(0,0,0,0.5)]"
+              />
+            </div>
+            <p className="mt-7 font-serif text-lg tracking-[0.42em] text-cream">TRESSA</p>
+            <p className="mt-1.5 text-[9px] uppercase tracking-[0.5em] text-gold/75">Aura Suites</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* full-page background image behind all content */}
       <div className="fixed inset-0 -z-10">
         <ShimmerImage src="https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=1600&q=70"
