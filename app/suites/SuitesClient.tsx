@@ -235,7 +235,7 @@ export default function SuitesClient() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-[1400px] mx-auto">
             {[...types]
               .sort((a, b) => Number(b.booking_enabled) - Number(a.booking_enabled))
-              .map((t, i) => <TypeCard key={t.name} type={t} nights={nights} index={i} onBook={() => openBooking(t)} />)}
+              .map((t) => <TypeCard key={t.name} type={t} nights={nights} onBook={() => openBooking(t)} />)}
           </div>
         )}
       </section>
@@ -264,14 +264,14 @@ function HeroBadge({ icon, label }: { icon: React.ReactNode; label: string }) {
 }
 
 /* -------------------------------------------------------------- type card */
-function TypeCard({ type, nights, index, onBook }: { type: SuiteType; nights: number; index: number; onBook: () => void }) {
+function TypeCard({ type, nights, onBook }: { type: SuiteType; nights: number; onBook: () => void }) {
   const img = type.images?.[0] || FALLBACK_IMG;
   const p = typePreview(type, Math.max(nights, 1), 1);
   const bookable = type.booking_enabled;
+  // Rendered statically (no scroll-in animation): animating opacity/transform on
+  // a backdrop-blur card flickers each card as it enters view on mobile.
   return (
-    <motion.article
-      initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }}
-      transition={{ duration: 0.6, delay: Math.min(index * 0.08, 0.3) }}
+    <article
       className="group flex flex-col overflow-hidden rounded-2xl bg-white/[0.88] backdrop-blur-xl border border-maroon/40 [box-shadow:0_12px_40px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.55)] hover:border-maroon/60 hover:[box-shadow:0_24px_60px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.6)] transition-all duration-500"
     >
       <button
@@ -340,7 +340,7 @@ function TypeCard({ type, nights, index, onBook }: { type: SuiteType; nights: nu
           )}
         </div>
       </div>
-    </motion.article>
+    </article>
   );
 }
 
