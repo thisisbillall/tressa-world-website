@@ -22,6 +22,9 @@ export type SuiteRoom = {
   amenities: string[];
   images: string[];
   is_active: boolean;
+  // Set from the management app. A room can be listed here but not sellable:
+  // the card still shows, without a price or a Book Now button.
+  booking_enabled: boolean;
   sort_order: number;
 };
 
@@ -68,7 +71,7 @@ export function computeSuitePricing(room: SuiteRoom, nights: number): SuitePrici
 const ROOM_COLUMNS = `
   id, room_number, name, subtitle, description, floor, bed_type, size_sqft,
   max_guests, base_price, gst_rate, offer_active, offer_percent, offer_label,
-  amenities, images, is_active, sort_order`;
+  amenities, images, is_active, booking_enabled, sort_order`;
 
 export async function listActiveSuiteRooms(): Promise<SuiteRoom[]> {
   const { rows } = await pool.query<SuiteRoom>(
@@ -82,7 +85,8 @@ export async function listActiveSuiteRooms(): Promise<SuiteRoom[]> {
 
 export async function getSuiteRoomById(id: string): Promise<SuiteRoom | null> {
   return queryOne<SuiteRoom>(
-    `SELECT ${ROOM_COLUMNS} FROM suite_rooms WHERE id = $1 AND is_active = TRUE`,
+    `SELECT ${ROOM_COLUMNS} FROM suite_rooms
+      WHERE id = $1 AND is_active = TRUE AND booking_enabled = TRUE`,
     [id],
   );
 }
@@ -96,7 +100,8 @@ export async function getRoomsWithAvailability(checkIn?: string, checkOut?: stri
     const { rows } = await pool.query<RoomWithFree>(
       `SELECT r.id, r.room_number, r.name, r.subtitle, r.description, r.floor, r.bed_type,
               r.size_sqft, r.max_guests, r.base_price, r.gst_rate, r.offer_active,
-              r.offer_percent, r.offer_label, r.amenities, r.images, r.is_active, r.sort_order,
+              r.offer_percent, r.offer_label, r.amenities, r.images, r.is_active,
+              r.booking_enabled, r.sort_order,
               NOT EXISTS (
                 SELECT 1 FROM suite_bookings b
                  WHERE b.room_id = r.id
@@ -129,6 +134,8 @@ export type SuiteType = {
   offer_label: string | null;
   total_rooms: number;
   available_rooms: number;
+  // False when the management app has paused sales for this type.
+  booking_enabled: boolean;
 };
 
 // Group rooms by name into the customer-facing types, preserving the order in
@@ -162,7 +169,9 @@ export function aggregateSuiteTypes(rooms: RoomWithFree[]): SuiteType[] {
       offer_percent: offerPercent,
       offer_label: offerLabel,
       total_rooms: group.length,
-      available_rooms: group.filter((r) => r.is_free).length,
+      // A paused room is never offered, however free its dates are.
+      available_rooms: group.filter((r) => r.is_free && r.booking_enabled).length,
+      booking_enabled: group.some((r) => r.booking_enabled),
     };
   });
 }

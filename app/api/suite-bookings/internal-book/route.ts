@@ -77,7 +77,8 @@ export async function POST(req: NextRequest) {
     const typeRooms = rooms.filter((r) => r.name === body.type_name);
     if (!typeRooms.length) return NextResponse.json({ success: false, error: 'Unknown room type' }, { status: 400 });
 
-    const free = typeRooms.filter((r) => r.is_free);
+    // Paused rooms are not sellable even when their dates are open.
+    const free = typeRooms.filter((r) => r.is_free && r.booking_enabled);
     if (free.length < quantity) {
       return NextResponse.json(
         { success: false, code: 'NOT_ENOUGH', error: `Only ${free.length} ${body.type_name} room(s) available for these dates.` },

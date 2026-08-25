@@ -24,6 +24,7 @@ type SuiteType = {
   offer_label: string | null;
   total_rooms: number;
   available_rooms: number;
+  booking_enabled: boolean;
 };
 type ConfirmedRoom = { room_name: string; room_number: string; booking_code: string; total_amount: string | number };
 
@@ -138,7 +139,12 @@ export default function SuitesClient() {
     return () => { document.body.style.overflow = ''; };
   }, [selected]);
 
-  const openBooking = (t: SuiteType) => { setSelectedName(t.name); setQty(1); };
+  const openBooking = (t: SuiteType) => {
+    // Paused types are shown but not sellable — the card offers no way in,
+    // and this is the guard for anything that still calls through.
+    if (!t.booking_enabled) return;
+    setSelectedName(t.name); setQty(1);
+  };
 
   return (
     <main className="min-h-screen bg-[#fdf8ea] text-ink">
@@ -215,20 +221,30 @@ function HeroBadge({ icon, label }: { icon: React.ReactNode; label: string }) {
 function TypeCard({ type, nights, index, onBook }: { type: SuiteType; nights: number; index: number; onBook: () => void }) {
   const img = type.images?.[0] || FALLBACK_IMG;
   const p = typePreview(type, Math.max(nights, 1), 1);
+  const bookable = type.booking_enabled;
   return (
     <motion.article
       initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }}
       transition={{ duration: 0.6, delay: Math.min(index * 0.08, 0.3) }}
       className="group bg-white flex flex-col overflow-hidden shadow-[0_1px_0_rgba(94,20,30,0.04)] hover:shadow-[0_20px_50px_-20px_rgba(94,20,30,0.35)] transition-shadow duration-500"
     >
-      <button onClick={onBook} className="relative aspect-[4/3] overflow-hidden text-left">
+      <button
+        onClick={onBook}
+        disabled={!bookable}
+        className={`relative aspect-[4/3] overflow-hidden text-left ${bookable ? '' : 'cursor-default'}`}
+      >
         <ShimmerImage src={img} alt={type.name} fill quality={72} sizes="(max-width:768px) 100vw, 33vw"
           placeholder="blur" blurDataURL={BLUR}
           className="object-cover transition-transform duration-700 group-hover:scale-105" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent opacity-70" />
-        {type.offer_active && (
+        {bookable && type.offer_active && (
           <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-gold text-maroon text-[10px] font-semibold tracking-[0.12em] uppercase shadow">
             <Sparkles size={12} /> {type.offer_label || `${type.offer_percent}% Off`}
+          </span>
+        )}
+        {!bookable && (
+          <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-maroon-dark/85 backdrop-blur-md border border-gold/40 text-cream text-[10px] font-semibold tracking-[0.12em] uppercase shadow">
+            Coming soon
           </span>
         )}
         <span className="absolute bottom-3 left-3 inline-flex items-center gap-2 px-3.5 py-2 bg-maroon-dark/80 backdrop-blur-md border border-gold/40 text-cream text-[11px] font-semibold tracking-[0.12em] uppercase shadow-[0_4px_16px_rgba(0,0,0,0.4)]">
@@ -251,19 +267,31 @@ function TypeCard({ type, nights, index, onBook }: { type: SuiteType; nights: nu
         )}
 
         <div className="mt-10 pt-5 border-t border-maroon/10 flex items-end justify-between">
-          <div>
-            <p className="text-[10px] tracking-[0.2em] uppercase text-muted">From</p>
-            <p className="mt-0.5 flex items-baseline gap-2">
-              {type.offer_active && <span className="text-sm text-muted/70 line-through">{inr(p.perNight)}</span>}
-              <span className="font-serif text-2xl text-maroon">{inr(p.perNightAfter)}</span>
-              <span className="text-[11px] text-muted">/ night</span>
-            </p>
-            <p className="text-[10px] text-muted mt-0.5">+ {type.gst_rate}% GST</p>
-          </div>
-          <button onClick={onBook}
-            className="px-4 py-2.5 text-[10px] tracking-[0.2em] uppercase bg-maroon text-cream hover:bg-gold hover:text-maroon transition-colors">
-            Book Now
-          </button>
+          {bookable ? (
+            <>
+              <div>
+                <p className="text-[10px] tracking-[0.2em] uppercase text-muted">From</p>
+                <p className="mt-0.5 flex items-baseline gap-2">
+                  {type.offer_active && <span className="text-sm text-muted/70 line-through">{inr(p.perNight)}</span>}
+                  <span className="font-serif text-2xl text-maroon">{inr(p.perNightAfter)}</span>
+                  <span className="text-[11px] text-muted">/ night</span>
+                </p>
+                <p className="text-[10px] text-muted mt-0.5">+ {type.gst_rate}% GST</p>
+              </div>
+              <button onClick={onBook}
+                className="px-4 py-2.5 text-[10px] tracking-[0.2em] uppercase bg-maroon text-cream hover:bg-gold hover:text-maroon transition-colors">
+                Book Now
+              </button>
+            </>
+          ) : (
+            /* Paused from the management app: the suite stays on show, but with
+               no rate and no way to book it. */
+            <div>
+              <p className="text-[10px] tracking-[0.2em] uppercase text-muted">Availability</p>
+              <p className="mt-1 font-serif text-xl text-maroon">Coming soon</p>
+              <p className="text-[10px] text-muted mt-0.5">Reservations open shortly</p>
+            </div>
+          )}
         </div>
       </div>
     </motion.article>

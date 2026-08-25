@@ -18,6 +18,7 @@ type SuiteType = {
   offer_percent: number;
   offer_label?: string | null;
   available_rooms: number;
+  booking_enabled?: boolean;
 };
 
 const money = (n: number) => `₹${Math.round(n).toLocaleString('en-IN')}`;
@@ -266,7 +267,8 @@ function InternalBooking() {
           <div className="space-y-2">
             {types.map((t) => {
               const sel = typeName === t.name;
-              const out = t.available_rooms < 1;
+              const paused = t.booking_enabled === false;
+              const out = paused || t.available_rooms < 1;
               return (
                 <button
                   key={t.name}
@@ -286,7 +288,9 @@ function InternalBooking() {
                       )}
                     </span>
                   </span>
-                  <span className="shrink-0 text-xs text-stone-500">{out ? 'Full' : `${t.available_rooms} free`}</span>
+                  <span className="shrink-0 text-xs text-stone-500">
+                    {paused ? 'Not bookable' : out ? 'Full' : `${t.available_rooms} free`}
+                  </span>
                 </button>
               );
             })}
