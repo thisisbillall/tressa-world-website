@@ -3,4 +3,4 @@
 -- (Your webapp can still customise any individual room afterwards.)
 
 UPDATE suite_rooms
-   SET amenities = ARRAY['King Bed','TV','Music System','Fast Wi-Fi','AC'];
+   SET amenities = ARRAY['King Bed','TV','Fast Wi-Fi','AC'];
