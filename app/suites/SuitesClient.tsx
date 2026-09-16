@@ -396,7 +396,9 @@ function BookingModal({ type, nights, checkIn, checkOut, qty, setCheckIn, setChe
   type: SuiteType; nights: number; checkIn: string; checkOut: string; qty: number;
   setCheckIn: (v: string) => void; setCheckOut: (v: string) => void; setQty: (v: number) => void; onClose: () => void;
 }) {
-  const images = type.images?.length ? type.images : [FALLBACK_IMG];
+  // Use the same local photo set as the card, falling back to the DB images.
+  const images = LOCAL_GALLERIES.find((g) => g.test.test(type.name))?.images
+    ?? (type.images?.length ? type.images : [FALLBACK_IMG]);
   const [imgIdx, setImgIdx] = useState(0);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
