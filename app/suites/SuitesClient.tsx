@@ -79,6 +79,14 @@ function loadRazorpay(): Promise<boolean> {
 }
 
 const FALLBACK_IMG = 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1400&q=80';
+// Real photos per suite type, kept here (not in the DB) so a shoot can be
+// dropped in without a migration. A type with more than one photo gets the
+// click-through gallery; matched by name.
+const LOCAL_GALLERIES: { test: RegExp; images: string[] }[] = [
+  { test: /delight/i, images: ['/suites/delight/1.jpg', '/suites/delight/2.jpg', '/suites/delight/3.jpg', '/suites/delight/4.jpg'] },
+  { test: /celebration/i, images: ['/suites/celebration/1.jpg', '/suites/celebration/2.jpg'] },
+  { test: /grand/i, images: ['/suites/grand/1.jpg'] },
+];
 // Tiny theme-coloured blur shown instantly while the real image loads.
 const BLUR = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAGCAIAAABxZ0isAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAEUlEQVR4nGN4cG0XVsQwkBIAULR1AbZ2244AAAAASUVORK5CYII=';
 
@@ -265,44 +273,83 @@ function HeroBadge({ icon, label }: { icon: React.ReactNode; label: string }) {
 
 /* -------------------------------------------------------------- type card */
 function TypeCard({ type, nights, onBook }: { type: SuiteType; nights: number; onBook: () => void }) {
-  const img = type.images?.[0] || FALLBACK_IMG;
+  // Suites with a local photo set get the manual gallery (prev/next arrows);
+  // every other type shows a single static image, even if the DB has several.
+  const localImgs = LOCAL_GALLERIES.find((g) => g.test.test(type.name))?.images;
+  const imgs = localImgs ?? [type.images?.[0] || FALLBACK_IMG];
+  const hasGallery = imgs.length > 1;
   const p = typePreview(type, Math.max(nights, 1), 1);
   const bookable = type.booking_enabled;
+
+  const [active, setActive] = useState(0);
+  const [firstLoaded, setFirstLoaded] = useState(false);
+  const go = (dir: number) => setActive((a) => (a + dir + imgs.length) % imgs.length);
   // Rendered statically (no scroll-in animation): animating opacity/transform on
   // a backdrop-blur card flickers each card as it enters view on mobile.
   return (
     <article
-      className="group flex flex-col overflow-hidden rounded-2xl bg-white/[0.88] backdrop-blur-xl border border-maroon/40 [box-shadow:0_12px_40px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.55)] hover:border-maroon/60 hover:[box-shadow:0_24px_60px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.6)] transition-all duration-500"
+      className="group flex flex-col overflow-hidden [box-shadow:0_12px_40px_rgba(0,0,0,0.28)] hover:[box-shadow:0_24px_60px_rgba(0,0,0,0.42)] transition-all duration-500"
     >
-      <button
-        onClick={onBook}
-        disabled={!bookable}
-        className={`relative aspect-[4/3] overflow-hidden text-left ${bookable ? '' : 'cursor-default'}`}
-      >
-        <ShimmerImage src={img} alt={type.name} fill quality={72} sizes="(max-width:768px) 100vw, 33vw"
-          placeholder="blur" blurDataURL={BLUR}
-          className="object-cover transition-transform duration-700 group-hover:scale-105" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent opacity-70" />
-        {bookable && type.offer_active && (
-          <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-gold text-maroon text-[10px] font-semibold tracking-[0.12em] uppercase shadow">
-            <Sparkles size={12} /> {type.offer_label || `${type.offer_percent}% Off`}
+      <div className="relative aspect-square overflow-hidden">
+        <button
+          onClick={onBook}
+          disabled={!bookable}
+          aria-label={bookable ? `Book ${type.name}` : type.name}
+          className={`absolute inset-0 z-0 text-left ${bookable ? '' : 'cursor-default'}`}
+        >
+          {imgs.map((src, i) => (
+            <Image key={src} src={src} alt={type.name} fill quality={72}
+              sizes="(max-width:768px) 100vw, 33vw"
+              placeholder="blur" blurDataURL={BLUR}
+              priority={i === 0}
+              onLoad={i === 0 ? () => setFirstLoaded(true) : undefined}
+              className={`object-cover transition-all duration-500 group-hover:scale-105 ${i === active ? 'opacity-100' : 'opacity-0'}`} />
+          ))}
+          <span aria-hidden
+            className={`img-shimmer absolute inset-0 z-10 pointer-events-none transition-opacity duration-700 ${firstLoaded ? 'opacity-0' : 'opacity-100'}`} />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent opacity-70" />
+          {bookable && type.offer_active && (
+            <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-gold text-maroon text-[10px] font-semibold tracking-[0.12em] uppercase shadow">
+              <Sparkles size={12} /> {type.offer_label || `${type.offer_percent}% Off`}
+            </span>
+          )}
+          {!bookable && (
+            <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-maroon-dark/85 backdrop-blur-md border border-gold/40 text-cream text-[10px] font-semibold tracking-[0.12em] uppercase shadow">
+              Coming soon
+            </span>
+          )}
+          <span className="absolute bottom-3 left-3 inline-flex items-center gap-2 px-3.5 py-2 bg-maroon-dark/80 backdrop-blur-md border border-gold/40 text-cream text-[11px] font-semibold tracking-[0.12em] uppercase shadow-[0_4px_16px_rgba(0,0,0,0.4)]">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-gold" />
+            </span>
+            {type.total_rooms} Room{type.total_rooms > 1 ? 's' : ''}
           </span>
-        )}
-        {!bookable && (
-          <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-maroon-dark/85 backdrop-blur-md border border-gold/40 text-cream text-[10px] font-semibold tracking-[0.12em] uppercase shadow">
-            Coming soon
-          </span>
-        )}
-        <span className="absolute bottom-3 left-3 inline-flex items-center gap-2 px-3.5 py-2 bg-maroon-dark/80 backdrop-blur-md border border-gold/40 text-cream text-[11px] font-semibold tracking-[0.12em] uppercase shadow-[0_4px_16px_rgba(0,0,0,0.4)]">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-gold" />
-          </span>
-          {type.total_rooms} Room{type.total_rooms > 1 ? 's' : ''}
-        </span>
-      </button>
+        </button>
 
-      <div className="flex flex-col flex-1 p-5 md:p-6">
+        {/* Manual photo gallery — sits over the image but outside the book
+            button, so tapping an arrow/dot changes the photo, never books. */}
+        {hasGallery && (
+          <>
+            <button type="button" aria-label="Previous photo" onClick={() => go(-1)}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 grid h-9 w-9 place-items-center rounded-full bg-black/35 text-white backdrop-blur-md transition-colors hover:bg-black/55">
+              <ChevronLeft size={18} />
+            </button>
+            <button type="button" aria-label="Next photo" onClick={() => go(1)}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 grid h-9 w-9 place-items-center rounded-full bg-black/35 text-white backdrop-blur-md transition-colors hover:bg-black/55">
+              <ChevronRight size={18} />
+            </button>
+            <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5">
+              {imgs.map((_, i) => (
+                <button key={i} type="button" aria-label={`Go to photo ${i + 1}`} onClick={() => setActive(i)}
+                  className={`h-1.5 rounded-full transition-all ${i === active ? 'w-4 bg-white' : 'w-1.5 bg-white/60 hover:bg-white/80'}`} />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="flex flex-col flex-1 p-4 md:p-5 bg-white/[0.88] backdrop-blur-xl">
         <h3 className="font-serif text-2xl font-light text-ink">{type.name}</h3>
         {type.subtitle && <p className="text-[13px] text-maroon/80 mt-0.5">{type.subtitle}</p>}
 
@@ -312,7 +359,7 @@ function TypeCard({ type, nights, onBook }: { type: SuiteType; nights: number; o
           </div>
         )}
 
-        <div className="mt-10 pt-5 border-t border-maroon/10 flex items-end justify-between">
+        <div className="mt-5 pt-4 border-t border-maroon/10 flex items-end justify-between">
           {bookable ? (
             <>
               <div>
