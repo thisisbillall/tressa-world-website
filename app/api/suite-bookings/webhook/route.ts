@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { notifyNewSuiteBooking } from '@/lib/notifyManagement';
 import { pool } from '@/lib/db';
 import { verifyWebhookSignature } from '@/lib/razorpay';
 import { isOurSuiteOrder } from '@/lib/refundGuard';
@@ -58,6 +59,8 @@ export async function POST(req: NextRequest) {
       if (rows[0]?.group_id) {
         try { await sendSuiteGroupSmsOnce(pool, rows[0].group_id); }
         catch (e) { console.error('[suite webhook] sms error:', e); }
+        // Backstop for the staff alert too, for the same reason as the SMS.
+        await notifyNewSuiteBooking(rows[0].group_id);
       }
       // LOG-ONLY: we no longer auto-refund. A captured suite payment with no
       // matching booking row is flagged for manual review instead of being

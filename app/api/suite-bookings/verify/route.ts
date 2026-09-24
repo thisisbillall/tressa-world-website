@@ -3,6 +3,7 @@ import { pool } from '@/lib/db';
 import { verifyCheckoutSignature } from '@/lib/razorpay';
 import { guardDbConfigured, jsonError } from '@/lib/apiError';
 import { sendSuiteGroupSmsOnce } from '@/lib/suiteGroup';
+import { notifyNewSuiteBooking } from '@/lib/notifyManagement';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -39,6 +40,9 @@ export async function POST(req: NextRequest) {
 
     try { await sendSuiteGroupSmsOnce(pool, rows[0].group_id); }
     catch (e) { console.error('[suite verify] sms error:', e); }
+
+    // Ring the desk straight away.
+    await notifyNewSuiteBooking(rows[0].group_id);
 
     return NextResponse.json({ success: true, group_ref: rows[0].group_ref, bookings: rows });
   } catch (e) {
