@@ -83,8 +83,8 @@ const FALLBACK_IMG = 'https://images.unsplash.com/photo-1611892440504-42a792e24d
 // dropped in without a migration. A type with more than one photo gets the
 // click-through gallery; matched by name.
 const LOCAL_GALLERIES: { test: RegExp; images: string[] }[] = [
-  { test: /delight/i, images: ['/suites/delight/1.jpg', '/suites/delight/2.jpg', '/suites/delight/3.jpg', '/suites/delight/4.jpg'] },
-  { test: /celebration/i, images: ['/suites/celebration/1.jpg', '/suites/celebration/2.jpg'] },
+  { test: /delight/i, images: ['/suites/delight/5.jpg', '/suites/delight/4.jpg', '/suites/delight/1.jpg', '/suites/delight/3.jpg'] },
+  { test: /celebration/i, images: ['/suites/celebration/5.jpg', '/suites/celebration/4.jpg', '/suites/celebration/3.jpg', '/suites/celebration/2.jpg', '/suites/celebration/1.jpg'] },
   { test: /grand/i, images: ['/suites/grand/1.jpg'] },
 ];
 // Tiny theme-coloured blur shown instantly while the real image loads.
