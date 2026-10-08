@@ -10,7 +10,7 @@ export const BOOKING_END_HHMM = '23:00';
 export const BOOKING_STEP_MIN = 15;
 
 // Exclusive (priority) windows — ONLY when reservation_time falls inside one
-// of these is the 15% Tressa Pay discount honored at the venue POS. Endpoints
+// of these is the 10% Tressa Pay discount honored at the venue POS. Endpoints
 // are inclusive: 19:00 qualifies, 19:15 does not. 22:00 qualifies, 23:00 qualifies.
 export const PRIORITY_WINDOWS: { label: string; start: string; end: string }[] = [
   { label: '3:00 PM – 7:00 PM',    start: '15:00', end: '19:00' },
@@ -84,7 +84,7 @@ export const BOOKING_FEE_INR = 99;
 
 // Discount applied at the POS when the booking code / QR is presented
 // AND the reservation_time falls inside a priority window.
-export const BOOKING_DISCOUNT_PERCENT = 15;
+export const BOOKING_DISCOUNT_PERCENT = 10;
 
 // QR / booking code expires this many minutes after the reservation time.
 export const BOOKING_CODE_GRACE_MIN = 15;

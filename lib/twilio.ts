@@ -1,4 +1,4 @@
-// Twilio SMS helper — used to send booking confirmations with the 15%-off
+// Twilio SMS helper — used to send booking confirmations with the 10%-off
 // code. Failure never blocks the booking flow: callers log + move on.
 //
 // Env:

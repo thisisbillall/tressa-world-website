@@ -13,7 +13,7 @@ import {
 export const metadata: Metadata = {
   title: 'Terms & Conditions',
   description:
-    'Priority Booking terms for TRESSA World — ₹99 reservation (redeemable on total booking), 15% Tressa Pay discount on Exclusive slots, QR + booking code validity, and refund policy.',
+    'Priority Booking terms for TRESSA World — ₹99 reservation (redeemable on total booking), 10% Tressa Pay discount on Exclusive slots, QR + booking code validity, and refund policy.',
   alternates: { canonical: `${SITE.url}/terms` },
   robots: { index: true, follow: true },
 };

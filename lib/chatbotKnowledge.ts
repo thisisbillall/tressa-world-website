@@ -53,7 +53,7 @@ Indian, North Indian, Continental, Pan-Asian, Mediterranean and Fusion. Extensiv
 - Book on the website's Book page (/booking): pick a venue (Soul · Restaurant, Sky · Rooftop, or Unwind · Bar), choose any 15-minute time between 3:00 PM and 11:00 PM, and confirm with your contact details.
 - A flat ₹99 booking charge is paid online. It is FULLY redeemable against your total bill at the venue — so you pay nothing extra to reserve.
 - After booking you receive a QR code + booking code by SMS. Arrive within the grace window shown; the QR/code expires shortly after your booked time.
-- Priority ("Exclusive") windows: 3:00 PM – 7:00 PM and 10:00 PM – 11:00 PM unlock 15% off your total bill via Tressa Pay. Other times are "Premium" and reserve at the same ₹99 charge (no bill discount).
+- Priority ("Exclusive") windows: 3:00 PM – 7:00 PM and 10:00 PM – 11:00 PM unlock 10% off your total bill via Tressa Pay. Other times are "Premium" and reserve at the same ₹99 charge (no bill discount).
 
 ## Room / Suite Bookings (Aura) — LIVE NOW
 - 10 premium luxury rooms are available to book online right now.

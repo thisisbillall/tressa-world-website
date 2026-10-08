@@ -266,7 +266,7 @@ export function faqSchema(faqs: { q: string; a: string }[]) {
 
 export const DEFAULT_FAQS = [
   { q: 'How do I book a table at TRESSA?', a: 'Use the Book page to pick your venue (Soul · Restaurant, Sky · Rooftop, or Unwind · Bar), choose any 15-minute time between 3:00 PM and 11:00 PM, and confirm with your contact details. You pay a flat ₹99 booking charge online and receive a QR + booking code by SMS.' },
-  { q: 'What time slots are available for table reservations?', a: 'Pick any 15-minute time between 3:00 PM and 11:00 PM. Exclusive priority windows (3:00 PM – 7:00 PM and 10:00 PM – 11:00 PM) unlock 15% off the total bill via Tressa Pay; other times are Premium and reserve the slot at the same ₹99 booking charge.' },
+  { q: 'What time slots are available for table reservations?', a: 'Pick any 15-minute time between 3:00 PM and 11:00 PM. Exclusive priority windows (3:00 PM – 7:00 PM and 10:00 PM – 11:00 PM) unlock 10% off the total bill via Tressa Pay; other times are Premium and reserve the slot at the same ₹99 booking charge.' },
   { q: 'How much is the booking charge?', a: '₹99 per reservation — the only thing you pay online to book. The full ₹99 is redeemed against your total billing at the venue, so you pay nothing extra to reserve.' },
   { q: 'Is there a cover charge?', a: 'Only at Sky (Rooftop). A per-guest cover charge applies at Sky and is added to your menu bill at the venue — it is not collected at booking time. Soul (Restaurant) and Unwind (Bar) have no cover charge.' },
   { q: 'Can I book a luxury suite online?', a: 'Aura · Luxury Suites are currently under development. Suite bookings will open soon — meanwhile, dining, rooftop and bar reservations are live.' },

@@ -1,5 +1,5 @@
 // Generates short, human-readable booking codes SMS'd after booking and
-// redeemed at the venue POS for 15% off. Alphabet skips 0/O/1/I/L to avoid
+// redeemed at the venue POS for 10% off. Alphabet skips 0/O/1/I/L to avoid
 // read-aloud mistakes over the phone. Format: "TW-ABCDE3" (6 chars + prefix).
 
 import { randomInt } from 'crypto';
