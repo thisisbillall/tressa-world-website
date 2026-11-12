@@ -143,41 +143,54 @@ function normItems(src) {
 buildMenu(ITEMS); rebuildIndex();
 const has = (e, t) => (e.item.t || []).includes(t);
 
-/* quick picks: curated collections built from the data */
+/* What a category is, read from its name, so drawings, colours, quick picks,
+   "Order for me" and the My List tips work for whatever menu is published. */
+const ROLE_RULES = {
+  kitchen: [[/soup|shorba/, "soup"], [/raita/, "raita"], [/salad/, "salad"], [/bread|roti|naan|paratha|kulcha/, "bread"], [/biryani|rice|pulao/, "rice"],
+    [/dessert|sweet/, "dessert"], [/desi mains|curr|gravy/, "curry"], [/pizza/, "pizza"], [/pasta/, "pasta"], [/sushi/, "sushi"], [/dumpling|dim ?sum|bao|momo/, "dumpling"],
+    [/desi appetizer|tandoor|kebab|tikka/, "tandoor"], [/appetizer|small plate|bar bite|starter|chaat|nibble/, "starter"], [/large plate|big plate|teppanyaki|oriental|wok|grill|main/, "main"]],
+  bar: [[/dessert brew/, "coffee"], [/mocktail|smoothie|shake|iced tea|juice|cooler|^beverages|soft|zero/, "zero"], [/coffee|\btea\b|chai/, "coffee"],
+    [/cocktail|2 is enough/, "cocktail"], [/shot|shooter/, "shot"], [/draught|draft/, "draught"], [/beer|breezer|pint/, "beer"], [/wine|champagne|prosecco|sparkling/, "wine"],
+    [/single malt|whisk|scotch|bourbon|walker/, "whisky"], [/vodka/, "vodka"], [/\bgin\b/, "gin"], [/\brum\b/, "rum"], [/tequil|mezcal/, "tequila"],
+    [/brandy|cognac/, "brandy"], [/liqueur|aperitif/, "liqueur"]]
+};
+const roleCache = new Map();
+function roleOf(tab, sec) {
+  const k = `${tab}|${sec.id}|${sec.title}`;
+  if (!roleCache.has(k)) { const t = String(sec.title || sec.id).toLowerCase(); const r = ROLE_RULES[tab].find(([re]) => re.test(t)); roleCache.set(k, r ? r[1] : ""); }
+  return roleCache.get(k);
+}
+const role = e => roleOf(e.tab, e.sec);
+const SPICY = /chill?i|chilly|schezwan|szechuan|saoji|malwani|kolhapuri|angara|chingari|thecha|peri ?peri|\b65\b|mirch|balchao|hot and sour|hot & sour|tom yum|sukka|kala masala|laal maas|vindaloo|chettinad|dynamite|sriracha|jalape|karwari|ghee roast|gunpowder|podi/i;
+const heat = e => e.item.s || (e.tab === "kitchen" && SPICY.test(e.item.n + " " + (e.item.d || "")) ? 2 : 0);
+const sizes = e => (e.cols || []).filter((c, i) => arr(e.item.p)[i] != null);
+
+/* quick picks: collections built from the data (empty ones are hidden) */
 const COLLECTIONS = {
   kitchen: [
     { id: "sig", label: "Signatures", icon: "star", title: "Chef's Signatures", sub: "The plates Tressa is known for.", test: e => has(e, "chef") },
     { id: "loved", label: "Most loved", icon: "heart", title: "Most Loved", sub: "What our guests order again and again.", test: e => has(e, "best") },
-    { id: "share", label: "For sharing", icon: "share", title: "For the Table", sub: "Platters, biryanis and big plates made for sharing.",
-      ids: ["royal-lamb-raan","sky-platter","garden-sky-platter","hummus-trio-warm-pita","edamame-truffle-dim-sum","prawn-har-gow","burrata-heirloom-tomato-basil-oil","hyderabadi-gosht-dum-biryani","murgh-dum-biryani","subz-dum-biryani","khow-suey","bread-basket"] },
-    { id: "u500", label: "Under ₹500", icon: "tag", title: "Under ₹500", sub: "Plates priced under ₹500, breads and sides left out.", test: e => e.minP < 500 && e.sec.id !== "breads" },
-    { id: "spicy", label: "Spice lovers", icon: "flame", title: "For Spice Lovers", sub: "Medium to fiery heat, Kolhapuri included.", test: e => (e.item.s || 0) >= 2 },
-    { id: "light", label: "Light & fresh", icon: "leaf", title: "Light & Fresh", sub: "Plates under 400 kcal.", test: e => e.item.k && e.item.k <= 400 && !["breads","desserts","biryani"].includes(e.sec.id) },
+    { id: "share", label: "For sharing", icon: "share", title: "For the Table", sub: "Platters, biryanis and pizzas made for sharing.", test: e => /platter|biryani|pizza|for two|family/i.test(e.item.n) },
+    { id: "u500", label: "Under ₹500", icon: "tag", title: "Under ₹500", sub: "Plates priced under ₹500, breads and sides left out.", test: e => e.minP < 500 && !["bread", "raita"].includes(role(e)) },
+    { id: "spicy", label: "Spice lovers", icon: "flame", title: "For Spice Lovers", sub: "Chilli, Kolhapuri, Saoji, Malwani and other fiery plates.", test: e => heat(e) >= 2 },
+    { id: "light", label: "Light & fresh", icon: "leaf", title: "Light & Fresh", sub: "Soups and salads.", test: e => ["soup", "salad"].includes(role(e)) },
     { id: "jain", label: "Jain friendly", icon: "lotus", title: "Jain Friendly", sub: "Dishes we can prepare without onion, garlic or root vegetables.", test: e => has(e, "jain") },
     { id: "new", label: "New", icon: "spark", title: "New This Season", sub: "Recent additions to the menu.", test: e => has(e, "new") }
   ],
   bar: [
     { id: "sig", label: "Signatures", icon: "star", title: "Bar Signatures", sub: "The pours that define an evening at Tressa.", test: e => has(e, "chef") },
     { id: "loved", label: "Most loved", icon: "heart", title: "Most Loved", sub: "Our guests' most ordered drinks.", test: e => has(e, "best") },
-    { id: "sunset", label: "Sunset pours", icon: "sun", title: "Sunset Pours", sub: "Light, bright drinks for golden hour on The Sky.",
-      ids: ["the-sky","last-light","aperol-spritz","kokum-collins","gin-garden","spiced-guava-margarita","sula-brut","mionetto-prosecco","blue-hour","kokum-fizz"] },
-    { id: "zero", label: "Zero proof", icon: "drop", title: "Zero Proof", sub: "All the craft, none of the alcohol.", test: e => e.sec.id === "zero-proof" },
-    { id: "india", label: "Made in India", icon: "pin", title: "Made in India", sub: "Indian malts, gins, rums, wines and local flavours.",
-      test: e => /India|Maharashtra|Karnataka|Goa|Bengaluru|Haryana|Uttar Pradesh/.test(e.item.r || "") || ["kokum-collins","kokum-fizz","masala-chai-sour","masala-chaas","cutting-masala-chai","kashmiri-kahwa"].includes(e.id) },
-    { id: "u500", label: "Under ₹500", icon: "tag", title: "Under ₹500", sub: "Drinks with a pour under ₹500.", test: e => e.minP < 500 && e.sec.id !== "coffee" },
-    { id: "share", label: "Bottles & pitchers", icon: "bottle", title: "Bottles & Pitchers", sub: "Wine by the bottle and draught by the pitcher, for the table.", test: e => e.sec.id === "wine" || (e.grp && e.grp.g === "On draught") },
-    { id: "after", label: "After dinner", icon: "moon", title: "After Dinner", sub: "Cognac, liqueurs and a few nightcaps.", test: e => e.sec.id === "cognac" || ["espresso-martini","irish-coffee","smoke-saffron","unwind-old-fashioned"].includes(e.id) }
+    { id: "zero", label: "Zero proof", icon: "drop", title: "Zero Proof", sub: "Mocktails, shakes and coolers, none of the alcohol.", test: e => role(e) === "zero" },
+    { id: "u500", label: "Under ₹500", icon: "tag", title: "Under ₹500", sub: "Drinks with a pour under ₹500.", test: e => e.minP < 500 && role(e) !== "coffee" },
+    { id: "share", label: "Bottles & pitchers", icon: "bottle", title: "Bottles & Pitchers", sub: "Pitchers, towers, buckets and bottles for the table.", test: e => sizes(e).some(c => /Bottle|Pitcher|Tower|Barrel|Bucket/.test(c)) || /pitcher|tower|bucket|barrel/i.test(e.item.n) },
+    { id: "after", label: "After dinner", icon: "moon", title: "After Dinner", sub: "Brandy, liqueurs and dessert brews.", test: e => ["brandy", "liqueur", "coffee"].includes(role(e)) }
   ]
 };
 
-/* offers (sample — replace with Tressa's real offers). Times are minutes after midnight, days 0 = Sunday */
-const OFFERS = [
-  { id: "sunset", title: "Sunset Hours", line: "1+1 on house cocktails and draught beer.", when: "Every day · 5 PM – 8 PM", where: "The Sky", days: [0,1,2,3,4,5,6], from: 1020, to: 1200, test: e => e.sec.id === "cocktails" || (e.grp && e.grp.g === "On draught") },
-  { id: "lunch", title: "Weekday Lunch", line: "20% off the food bill, mains and desserts included.", when: "Mon – Fri · 12 PM – 3 PM", where: "Soul", days: [1,2,3,4,5], from: 720, to: 900 },
-  { id: "raan", title: "Raan for the Table", line: "Royal Lamb Raan with two pitchers of House Lager for ₹4,350. You save ₹1,000.", when: "Fri – Sun · all day", where: "Soul", days: [5,6,0], from: 720, to: 1440, ids: ["royal-lamb-raan", "house-lager"] },
-  { id: "wine", title: "Bottle Thursdays", line: "25% off every bottle of wine.", when: "Thursdays · from 7 PM", where: "Unwind", days: [4], from: 1140, to: 1440, test: e => e.sec.id === "wine" },
-  { id: "bday", title: "Birthday at Tressa", line: "A complimentary dessert with a candle for the birthday guest. Show a photo ID to your server.", when: "Any day", where: "All of Tressa", always: true }
-];
+/* Offers shown under "Offers" in the quick picks. Empty until Tressa adds real ones
+   (staff can already put an offer on a banner from Live Menu). Times are minutes after midnight, days 0 = Sunday:
+   { id, title, line, when, where, days: [0..6], from, to, ids: [item ids] | test: e => ..., always: true } */
+const OFFERS = [];
 function istNow() {
   try {
     const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", weekday: "short", hour: "numeric", minute: "numeric", hourCycle: "h23" }).formatToParts(new Date());
@@ -191,7 +204,7 @@ const offerItems = o => o.ids ? o.ids.map(i => INDEX[i]).filter(Boolean) : o.tes
 /* ---------------- live content: banners, specials, picks, sold out ----------------
    DEFAULT_LIVE is what the menu shows before (or without) a data source.
    Staff change it from the admin panel (open the menu with #admin).
-   Item ids are the slugs of item names, e.g. "nalli-nihari". */
+   Item ids are the slugs of item names, e.g. "dal-tadka". */
 const DEFAULT_LIVE = (REMOTE && REMOTE.doc.live) || window.TRESSA_LIVE;
 function normLive(x) {
   x = x && typeof x === "object" ? x : {};
@@ -332,11 +345,17 @@ const GLYPH_RULES = {
 const GLYPH_SEC = { soups: "bowl", tandoor: "skewer", "small-plates": "plate", salads: "salad", "pizza-pasta": "pizza", curries: "kadai", "grills-woks": "plate", biryani: "handi", breads: "plate", desserts: "sweets", cocktails: "coupe", classics: "coupe", "zero-proof": "highball", whisky: "tumbler", gin: "balloon", spirits: "tumbler", cognac: "snifter", wine: "wine", beer: "beer", coffee: "cup" };
 const BAR_SECS = new Set(MENU.bar.sections.map(s => s.id));
 function plainIds() { return TABK.flatMap(t => MENU[t].sections.filter(s => s.plain === true).map(s => s.id)); }
-const PLAIN = new Set(REMOTE ? plainIds() : ["breads", "whisky", "gin", "spirits", "cognac", "wine", "beer", "coffee"]);
+const PLAIN = new Set(plainIds());
 const hashOf = s => { let h = 7; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); };
 const PAL_K = Object.keys(PALETTE).slice(0, 10), PAL_B = Object.keys(PALETTE).slice(10);
-const palOf = e => PALETTE[e.sec.id] ? e.sec.id : (e.tab === "bar" ? PAL_B : PAL_K)[hashOf(e.sec.id) % PAL_K.length];
-function glyphOf(e) { const n = norm(e.item.n); for (const [re, g] of GLYPH_RULES[e.tab]) if (re.test(n)) return g; return GLYPH_SEC[e.sec.id] || (e.tab === "bar" ? "tumbler" : "plate"); }
+const ROLE_PAL = { soup: "soups", salad: "salads", raita: "salads", bread: "breads", rice: "biryani", dessert: "desserts", curry: "curries", pizza: "pizza-pasta", pasta: "pizza-pasta",
+  sushi: "small-plates", dumpling: "small-plates", tandoor: "tandoor", starter: "small-plates", main: "grills-woks",
+  zero: "zero-proof", coffee: "coffee", cocktail: "cocktails", shot: "classics", draught: "beer", beer: "beer", wine: "wine", whisky: "whisky", vodka: "spirits", gin: "gin", rum: "spirits", tequila: "spirits", brandy: "cognac", liqueur: "cognac" };
+const ROLE_GLYPH = { soup: "bowl", salad: "salad", raita: "bowl", bread: "plate", rice: "handi", dessert: "sweets", curry: "kadai", pizza: "pizza", pasta: "pasta", sushi: "plate", dumpling: "dumpling",
+  tandoor: "skewer", starter: "plate", main: "plate", zero: "highball", coffee: "cup", cocktail: "coupe", shot: "tumbler", draught: "beer", beer: "beer", wine: "wine", whisky: "tumbler",
+  vodka: "tumbler", gin: "balloon", rum: "tumbler", tequila: "tumbler", brandy: "snifter", liqueur: "snifter" };
+const palOf = e => PALETTE[e.sec.id] ? e.sec.id : ROLE_PAL[role(e)] || (e.tab === "bar" ? PAL_B : PAL_K)[hashOf(e.sec.id) % PAL_K.length];
+function glyphOf(e) { const n = norm(e.item.n); for (const [re, g] of GLYPH_RULES[e.tab]) if (re.test(n)) return g; return GLYPH_SEC[e.sec.id] || ROLE_GLYPH[role(e)] || (e.tab === "bar" ? "tumbler" : "plate"); }
 const mono = n => (String(n).replace(/^(the|a)\s+/i, "")[0] || "").toUpperCase();
 function artTile(a, cls = "", extra = "") {
   const ang = 128 + a.seed % 48, rot = (a.seed >> 4) % 13 - 6;
@@ -370,8 +389,9 @@ const rowHTML = (e, o = {}) => itemHTML(e, { sm: true, sec: o.sec });
 function sectionHTML(tab, sec) {
   const id = `${tab[0]}-${sec.id}`, plain = PLAIN.has(sec.id);
   let body = "", cur = [], label = null;
-  const flush = () => { if (cur.length) body += (label ? `<p class="grp-label">${esc(label)}</p>` : "") + `<ul class="group${plain ? " plain" : ""}">${cur.join("")}</ul>`; cur = []; };
-  for (const it of sec.items) { if (it.g) { flush(); label = it.g; continue; } cur.push(itemHTML(INDEX[it.id])); }
+  // dishes with a photo come first in each group (stable, so menu order is kept otherwise)
+  const flush = () => { if (cur.length) body += (label ? `<p class="grp-label">${esc(label)}</p>` : "") + `<ul class="group${plain ? " plain" : ""}">${cur.sort((a, b) => !!b.item.img - !!a.item.img).map(e => itemHTML(e)).join("")}</ul>`; cur = []; };
+  for (const it of sec.items) { if (it.g) { flush(); label = it.g; continue; } if (INDEX[it.id]) cur.push(INDEX[it.id]); }
   flush();
   const n = sec.items.filter(i => !i.g).length;
   return `<section class="sec pad" id="${id}" data-short="${esc(sec.short)}" aria-labelledby="${id}-h">
@@ -380,11 +400,12 @@ function sectionHTML(tab, sec) {
 const STAR = '<svg class="ostar" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>';
 function quickHTML(tab) {
   const live = OFFERS.filter(offerLive).length;
-  const offer = `<button class="qt hl" type="button" data-act="offers"><span class="qt-l">${STAR}Offers</span><span class="qt-s">${live ? `${live} on now` : `${OFFERS.length} offers`}</span></button>`;
+  const offer = OFFERS.length ? `<button class="qt hl" type="button" data-act="offers"><span class="qt-l">${STAR}Offers</span><span class="qt-s">${live ? `${live} on now` : `${OFFERS.length} offers`}</span></button>` : "";
   const planT = `<button class="qt pl" type="button" data-act="plan"><span class="qt-l">Order for me</span><span class="qt-s">5 quick taps</span></button>`;
   return `<section class="quick" aria-label="Quick picks"><div class="qrow" data-lenis-prevent>${offer}${planT}${COLLECTIONS[tab].map(c => {
     const n = colItems(tab, c).length;
-    return `<button class="qt" type="button" data-col="${c.id}"${n ? "" : " disabled"}><span class="qt-l">${esc(c.label)}</span><span class="qt-s">${countLabel(n, tab)}</span></button>`;
+    if (!n) return "";
+    return `<button class="qt" type="button" data-col="${c.id}"><span class="qt-l">${esc(c.label)}</span><span class="qt-s">${countLabel(n, tab)}</span></button>`;
   }).join("")}</div></section>`;
 }
 function railHTML(tab, kind) {
@@ -632,14 +653,12 @@ function listSuggestions(es) {
       if (save > 0) out.push({ t: `Make it 60 ml and save ₹${fmt(save)}`, s: `${pairs * 2} × 30 ml of ${name} is the same pour as ${pairs} × 60 ml.`, sw: { from: x.k, to: `${x.id}|1`, n: pairs, rest: x.q % 2 } });
     }
   }
-  const hasBread = kitchen.some(x => x.e.sec.id === "breads" && x.e.grp && x.e.grp.g === "From the tandoor");
-  if (inSec("curries") && !hasBread && !inSec("biryani")) out.push({ t: "Breads for your curries", s: "Most tables order one or two per person.", items: pick(["butter-naan", "garlic-naan", "laccha-paratha"]) });
-  if (bar.length && !kitchen.length) out.push({ t: "Something to go with your drinks", s: "Small plates that suit what you're drinking.", items: pick([...pairsFrom(bar, "kitchen"), "crispy-lotus-stem-honey-chilli", "butter-chicken-bao", "truffle-parmesan-fries"]) });
-  if (kitchen.length && !bar.length) out.push({ t: "Nothing to drink yet", s: "A pour that suits your food, or a zero-proof cooler.", items: [...pick([...pairsFrom(kitchen, "bar"), "the-sky"], 1), ...pick(["kokum-fizz", "blue-hour"], 1)] });
-  if (kitchen.some(x => ["curries", "grills-woks", "pizza-pasta", "biryani"].includes(x.e.sec.id)) && !inSec("desserts")) {
-    const souffle = !vegOnly && !inList("chocolate-souffle");
-    out.push({ t: "Save room for dessert?", s: souffle ? "The soufflé is baked to order and takes 18 minutes. Order it now and it arrives right after your mains." : "Two house favourites to finish.", items: pick(vegOnly ? ["gold-leaf-kulfi", "warm-gulab-jamun-saffron-rabri"] : ["chocolate-souffle", "gold-leaf-kulfi"]) });
-  }
+  const inRole = (r, list = kitchen) => list.some(x => role(x.e) === r);
+  const firstOf = (test, k = 2) => pick(ORDER.filter(e => test(e) && !inList(e.id)).sort((x, y) => has(y, "chef") - has(x, "chef")).map(e => e.id), k);
+  if (inRole("curry") && !inRole("bread") && !inRole("rice")) out.push({ t: "Breads for your curries", s: "Most tables order one or two per person.", items: firstOf(e => role(e) === "bread" && /butter naan|garlic naan|laccha/i.test(e.item.n), 3) });
+  if (bar.length && !kitchen.length) out.push({ t: "Something to go with your drinks", s: "Small plates that suit what you're drinking.", items: [...pick(pairsFrom(bar, "kitchen")), ...firstOf(e => e.tab === "kitchen" && role(e) === "starter")].slice(0, 2) });
+  if (kitchen.length && !bar.length) out.push({ t: "Nothing to drink yet", s: "A cocktail to go with your food, or a mocktail.", items: [...firstOf(e => e.tab === "bar" && role(e) === "cocktail", 1), ...firstOf(e => e.tab === "bar" && role(e) === "zero", 1)] });
+  if (kitchen.some(x => ["curry", "main", "pizza", "pasta", "rice"].includes(role(x.e))) && !inRole("dessert")) out.push({ t: "Save room for dessert?", s: "Something sweet to finish.", items: firstOf(e => role(e) === "dessert") });
   return out.filter(o => o.sw || (o.items && o.items.length)).slice(0, 3);
 }
 function suggHTML(es) {
@@ -765,8 +784,8 @@ function offerView(id) {
 /* ---------------- order for me: five taps to a planned table ---------------- */
 const PLAN_Q = [
   { k: "n", step: "Guests", q: "How many of you are eating?", nums: true, opts: [[1, "1"], [2, "2"], [4, "3–4"], [6, "5–6"], [8, "7+"]] },
-  { k: "diet", step: "Food", q: "What does the table eat?", opts: [["veg", "Vegetarian", "Only veg dishes"], ["non", "Non-veg", "Chicken, mutton and seafood, plus our Dal Tressa"], ["mix", "A mix of both", "Half veg, half non-veg"]] },
-  { k: "spice", step: "Spice", q: "How much heat?", opts: [[1, "Mild", "Creamy and gentle"], [2, "Medium", "A little kick"], [3, "Fiery", "Kolhapuri and Laal Maas welcome"]] },
+  { k: "diet", step: "Food", q: "What does the table eat?", opts: [["veg", "Vegetarian", "Only veg dishes"], ["non", "Non-veg", "Chicken, mutton and seafood"], ["mix", "A mix of both", "Half veg, half non-veg"]] },
+  { k: "spice", step: "Spice", q: "How much heat?", opts: [[1, "Mild", "Creamy and gentle"], [2, "Medium", "A little kick"], [3, "Fiery", "Bring on the chilli"]] },
   { k: "drinks", step: "Drinks", q: "Anything to drink?", opts: [["cocktail", "Cocktails", "House signatures and classics"], ["beerwine", "Beer or wine", "Draught, glasses or a bottle"], ["zero", "Zero proof", "Coolers and mocktails"], ["none", "No drinks", "Just the food"]] },
   { k: "budget", step: "Budget", q: "What kind of evening?", opts: [["low", "Keep it light", "About ₹1,000 – 1,500 a head"], ["mid", "The full evening", "About ₹1,500 – 2,500 a head"], ["high", "Go all out", "₹2,500 and up, signatures and premium pours"]] }
 ];
@@ -780,7 +799,7 @@ function composePlan(a, seed) {
   const out = [], used = new Set(OUT);
   const serves = e => { const m = /Serves (\d)/.exec(e.item.q || ""); return m ? +m[1] : 1; };
   const score = e => {
-    const t = e.item.t || [], sp = e.item.s || 0, p = e.minP;
+    const t = e.item.t || [], sp = heat(e), p = e.minP;
     let v = (t.includes("chef") ? 3 : 0) + (t.includes("best") ? 2.2 : 0) + (t.includes("new") ? .6 : 0);
     if (maxS === 3) v += sp * .7; else if (maxS === 1) v -= sp * .5;
     v += low ? -p / 350 : B === "high" ? p / 450 : -p / 1400;
@@ -789,12 +808,13 @@ function composePlan(a, seed) {
   const wantAt = i => D === "veg" ? "veg" : D === "mix" ? (i % 2 ? "veg" : "non") : (i % 3 === 2 ? "veg" : "non");
   const fits = (e, want) => !want || (want === "veg" ? e.item.v === "v" : e.item.v !== "v");
   const add = (e, q, course, vi = 0) => { if (!e) return; used.add(e.id); out.push({ key: `${e.id}|${vi}`, q, course }); };
-  const isCurry = x => INDEX[x.key.split("|")[0]].sec.id === "curries";
+  const isCurry = x => role(INDEX[x.key.split("|")[0]]) === "curry";
+  const byName = (rx, r) => ORDER.find(e => e.tab === "kitchen" && role(e) === r && rx.test(e.item.n) && !OUT.has(e.id) && (D !== "veg" || e.item.v === "v"));
   function take(secs, count, course, o = {}) {
     let slots = count, i = o.i0 || 0, guard = 0;
     while (slots > 0 && guard++ < 20) {
       const want = o.anyDiet && D !== "veg" ? null : wantAt(i);
-      const base = ORDER.filter(e => e.tab === "kitchen" && secs.includes(e.sec.id) && !used.has(e.id) && (e.item.s || 0) <= maxS && serves(e) <= n && e.minP / Math.min(serves(e), n) <= cap && (!o.filter || o.filter(e)));
+      const base = ORDER.filter(e => e.tab === "kitchen" && secs.includes(role(e)) && !used.has(e.id) && heat(e) <= maxS && serves(e) <= n && e.minP / Math.min(serves(e), n) <= cap && (!o.filter || o.filter(e)));
       let cands = base.filter(e => fits(e, want));
       if (!cands.length && D !== "veg") cands = base;
       if (!cands.length) break;
@@ -807,33 +827,39 @@ function composePlan(a, seed) {
   if (low) { st = Math.ceil(st / 2); mn = Math.max(1, mn - (n >= 4 ? 1 : 0)); rc = n >= 4 ? 1 : 0; ds = n >= 4 ? 1 : 0; }
   if (B === "high") { if (n >= 2) st += 1; ds = Math.max(ds, Math.ceil(n / 2)); }
   const rounds = B === "high" ? Math.ceil(n * 1.5) : n;
-  take(["tandoor", "small-plates"], st, "Starters", { filter: e => !["truffle-parmesan-fries", "masala-cheese-garlic-bread"].includes(e.id) });
-  if (n >= 2) { add(INDEX["dal-tressa"], 1, "Mains"); mn--; }
-  if (n === 1) take(["curries", "grills-woks", "pizza-pasta"], mn, "Mains");
+  take(["tandoor", "starter"], st, "Starters", { filter: e => !/fries|platter/i.test(e.item.n) });
+  const dal = n >= 2 && byName(/\bdal\b/i, "curry");
+  if (dal) { add(dal, 1, "Mains"); mn--; }
+  if (n === 1) take(["curry", "main", "pizza", "pasta"], mn, "Mains");
   else {
     const extra = mn >= 3 ? 1 : 0;
-    take(["curries"], mn - extra, "Mains", { filter: e => !/^dal/i.test(e.item.n) });
-    if (extra) take(["grills-woks", "pizza-pasta"], extra, "Mains", { i0: 1 });
+    take(["curry"], mn - extra, "Mains", { filter: e => !/\bdal\b/i.test(e.item.n) });
+    if (extra) take(["main", "pizza", "pasta"], extra, "Mains", { i0: 1 });
   }
   if (out.some(x => x.course === "Mains" && isCurry(x))) {
     const c = n === 1 ? 2 : Math.ceil(n * (low ? 1.25 : 1.5)), b = Math.ceil(c / 2);
-    add(INDEX["butter-naan"], b, "Breads & rice");
-    if (c - b) add(INDEX["garlic-naan"], c - b, "Breads & rice");
+    add(byName(/butter naan/i, "bread") || byName(/naan|roti/i, "bread"), b, "Breads & rice");
+    if (c - b) add(byName(/garlic naan/i, "bread") || byName(/roti|paratha/i, "bread"), c - b, "Breads & rice");
   }
   if (rc) {
-    if (n <= 2) { if (out.some(isCurry)) add(INDEX["jeera-rice"], 1, "Breads & rice"); }
-    else take(["biryani"], rc, "Breads & rice", { filter: e => /biryani/i.test(e.item.n) });
+    if (n <= 2) { if (out.some(isCurry)) add(byName(/jeera rice/i, "rice") || byName(/steamed|basmati/i, "rice"), 1, "Breads & rice"); }
+    else take(["rice"], rc, "Breads & rice", { filter: e => /biryani/i.test(e.item.n) });
   }
-  take(["desserts"], ds, "Dessert", { anyDiet: true });
+  take(["dessert"], ds, "Dessert", { anyDiet: true });
   if (a.drinks === "cocktail" || a.drinks === "zero") {
-    const secs = a.drinks === "zero" ? ["zero-proof"] : ["cocktails", "classics"];
-    const pool = ORDER.filter(e => e.tab === "bar" && secs.includes(e.sec.id) && !["soft-beverages", "fresh-lime-soda", "masala-chaas", "fresh-juice"].includes(e.id) && (e.item.s || 0) <= maxS)
-      .map(e => [score(e) + (e.sec.id === "cocktails" ? 1 : 0), e]).sort((x, y) => y[0] - x[0]).map(x => x[1]);
+    const want = a.drinks === "zero" ? "zero" : "cocktail";
+    const pool = ORDER.filter(e => e.tab === "bar" && role(e) === want && !OUT.has(e.id) && !/water|soda|soft drink|^juice$|pitcher|tower/i.test(e.item.n) && arr(e.item.p).length < 3)
+      .map(e => [score(e) + (/signature/i.test(e.sec.title) ? 1 : 0), e]).sort((x, y) => y[0] - x[0]).map(x => x[1]);
     const k = Math.min(rounds, 4, pool.length);
     for (let j = 0; j < k; j++) add(pool[j], Math.floor(rounds / k) + (j < rounds % k ? 1 : 0), "Drinks");
   } else if (a.drinks === "beerwine") {
-    if (n <= 2) add(INDEX[low ? "house-lager" : B === "mid" ? (rnd() < .5 ? "sula-sauvignon-blanc" : "sula-dindori-reserve-shiraz") : "krsma-cabernet-sauvignon"], rounds, "Drinks");
-    else { const id = low ? "house-lager" : B === "mid" ? "sula-dindori-reserve-shiraz" : "fratelli-sette"; add(INDEX[id], Math.ceil(n / (id === "house-lager" ? 4.5 : 5)), "Drinks", 1); }
+    // a draught or a wine, by the glass for one or two, by the pitcher or bottle for a table
+    const wine = B !== "low", r = wine ? "wine" : "draught";
+    const opts = ORDER.filter(e => e.tab === "bar" && (role(e) === r || (!wine && role(e) === "beer")) && !OUT.has(e.id) && e.cols)
+      .sort((x, y) => (B === "high" ? y.minP - x.minP : x.minP - y.minP));
+    const big = e => e.cols.findIndex((c, i) => /Bottle|Pitcher/.test(c) && arr(e.item.p)[i] != null);
+    const pick1 = opts.find(e => n <= 2 || big(e) > 0) || opts[0];
+    if (pick1) { const bi = big(pick1); if (n > 2 && bi > 0) add(pick1, Math.ceil(n / (pick1.cols[bi] === "Bottle" ? 5 : 4.5)), "Drinks", bi); else add(pick1, rounds, "Drinks", 0); }
   }
   return out;
 }

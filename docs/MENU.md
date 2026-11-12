@@ -38,20 +38,38 @@ built-in menu below.
 
 ### Built-in menus
 
-Each file in `public/menu/data/` holds one space's built-in menu:
+Each file in `public/menu/data/` holds one space's built-in menu, built from
+Tressa's menu export (`final_Tressa_Menu_New_Rate.xlsx`, November 2026):
 
-- `window.TRESSA_MENU`: sections, categories and items (name `n`, price `p`,
-  veg `v`, description `d`, spice `s`, tags `t`, photo `img`).
+| File | Pages | From the sheets |
+|---|---|---|
+| `soul.js`, `unwind.js`, `all.js` | `/menu/soul`, `/menu/unwind`, `/menu/aura`, `/menu` | SECTION WISE (food) and BAR (drinks) |
+| `sky.js` | `/menu/sky` | SKY KITCHEN (food) and SKY BAR (drinks) |
+
+The management app's Live Menu tab starts each space from the same menus.
+
+- `window.TRESSA_MENU`: categories and items (name `n`, price `p`,
+  veg `v`, description `d`, note `x`, tags `t`, photo `img`). A category with
+  sizes has `cols` (for example `["30 ml", "60 ml", "180 ml"]`, up to six) and
+  each item's `p` lists a price per size, `null` where a size isn't served.
 - `window.TRESSA_LIVE`: banners, Today's Specials, Only at Tressa,
-  Recommended and sold-out items for that space.
+  Recommended and sold-out items for that space (empty until set from Live
+  Menu).
 
-Item ids are the slugs of item names (for example `nalli-nihari`); banners and
-lists refer to items by id. Photos go in `public/menu/photos/` and are linked
-with `img: "/menu/photos/<file>.webp"`.
+Item ids are the slugs of item names (for example `dal-tadka`); banners and
+lists refer to items by id. Photos are linked with an https URL in `img`.
+Dishes with a photo are shown first in their category.
+
+Quick picks, "Order for me" and the My List tips work from category names
+(Soups, Desi Mains, Desserts, Mocktails, Whisky ...), so they keep working
+when categories are added or renamed. Empty quick picks are hidden.
 
 The pages load the data file with a `?v=` version in the URL. After editing a
 data file, change that `v` value in the matching `index.html` so phones fetch
 the new menu straight away.
+
+`app.js` and `styles.css` are edited directly (they're no longer generated
+from the design prototype).
 
 ## Files
 
