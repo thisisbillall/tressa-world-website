@@ -12,6 +12,18 @@
    Group rows: { g: "Group name", cols: [...] }
 ------------------------------------------------------------------- */
 const MENU = window.TRESSA_MENU;
+const REMOTE_URL = typeof window.TRESSA_SOURCE === "string" ? window.TRESSA_SOURCE : "";
+const REMOTE_KEY = "tressa-menu-doc:" + REMOTE_URL;
+function docOk(d) {
+  const itemOk = it => it && typeof it === "object" && (typeof it.g === "string" || (typeof it.n === "string" && typeof it.id === "string" && (typeof it.p === "number" || Array.isArray(it.p))));
+  const tabOk = t => t && Array.isArray(t.sections) && t.sections.length > 0 && t.sections.every(s => s && typeof s.id === "string" && typeof s.title === "string" && typeof s.short === "string" && Array.isArray(s.items) && s.items.every(itemOk));
+  return !!(d && d.menu && tabOk(d.menu.kitchen) && tabOk(d.menu.bar) && d.live && typeof d.live === "object");
+}
+let REMOTE = null;
+if (REMOTE_URL) try {
+  const c = JSON.parse(localStorage.getItem(REMOTE_KEY) || "null");
+  if (c && typeof c.ver === "string" && docOk(c.doc)) { REMOTE = c; MENU.kitchen.sections = c.doc.menu.kitchen.sections; MENU.bar.sections = c.doc.menu.bar.sections; }
+} catch (err) {}
 const ALLERGENS = { G: "Gluten", D: "Dairy", N: "Tree nuts", P: "Peanuts", E: "Egg", S: "Soy", F: "Fish", C: "Crustaceans", M: "Mustard", Se: "Sesame", Su: "Sulphites" };
 const SPICE = ["", "Mild", "Medium", "Fiery"];
 const TAGS = { chef: "Signature", best: "Guest favourite", new: "New", jain: "Jain on request" };
@@ -37,23 +49,27 @@ const buzz = () => { try { navigator.vibrate && navigator.vibrate(8); } catch (e
    lists and saved orders keep pointing at the right dish after an edit.
    Staff changes (document "menu/items") are laid over this base menu. */
 const INDEX = {}, ORDER = [], TABK = ["kitchen", "bar"];
-{
+let BASE = null;
+const BASEIX = {}, CATS = {};
+function initBase() {
   const used = new Set();
   for (const tab of TABK) for (const sec of MENU[tab].sections) for (const it of sec.items) {
     if (it.g) continue;
-    let id = slug(it.n); while (used.has(id)) id += "-x"; used.add(id); it.id = id;
+    let id = typeof it.id === "string" && /^[a-z0-9-]{1,64}$/.test(it.id) ? it.id : slug(it.n); while (used.has(id)) id += "-x"; used.add(id); it.id = id;
   }
-}
-const BASE = JSON.parse(JSON.stringify({ kitchen: MENU.kitchen.sections, bar: MENU.bar.sections }));
-const BASEIX = {}, CATS = {};
-for (const tab of TABK) for (const sec of BASE[tab]) {
+  BASE = JSON.parse(JSON.stringify({ kitchen: MENU.kitchen.sections, bar: MENU.bar.sections }));
+  for (const k in BASEIX) delete BASEIX[k];
+  for (const k in CATS) delete CATS[k];
+  for (const tab of TABK) for (const sec of BASE[tab]) {
   let g = null;
   if (!sec.items.length || !sec.items[0].g) CATS[`${tab}|${sec.id}|`] = { tab, sec: sec.id, label: sec.title, cols: sec.cols || null };
   for (const it of sec.items) {
     if (it.g) { g = it; CATS[`${tab}|${sec.id}|${it.g}`] = { tab, sec: sec.id, label: `${sec.title} · ${it.g}`, cols: it.cols || sec.cols || null }; continue; }
     BASEIX[it.id] = { it, tab, secId: sec.id, cat: `${tab}|${sec.id}|${g ? g.g : ""}` };
   }
+  }
 }
+initBase();
 const catKeys = tab => Object.keys(CATS).filter(k => CATS[k].tab === tab);
 const ITEM_FIELDS = ["n", "d", "r", "p", "v", "s", "t", "img"];
 function mergeItem(it, o) {
@@ -176,7 +192,7 @@ const offerItems = o => o.ids ? o.ids.map(i => INDEX[i]).filter(Boolean) : o.tes
    DEFAULT_LIVE is what the menu shows before (or without) a data source.
    Staff change it from the admin panel (open the menu with #admin).
    Item ids are the slugs of item names, e.g. "nalli-nihari". */
-const DEFAULT_LIVE = window.TRESSA_LIVE;
+const DEFAULT_LIVE = (REMOTE && REMOTE.doc.live) || window.TRESSA_LIVE;
 function normLive(x) {
   x = x && typeof x === "object" ? x : {};
   const str = (s, n) => typeof s === "string" ? s.replace(/\s+/g, " ").trim().slice(0, n) : "";
@@ -315,9 +331,12 @@ const GLYPH_RULES = {
 };
 const GLYPH_SEC = { soups: "bowl", tandoor: "skewer", "small-plates": "plate", salads: "salad", "pizza-pasta": "pizza", curries: "kadai", "grills-woks": "plate", biryani: "handi", breads: "plate", desserts: "sweets", cocktails: "coupe", classics: "coupe", "zero-proof": "highball", whisky: "tumbler", gin: "balloon", spirits: "tumbler", cognac: "snifter", wine: "wine", beer: "beer", coffee: "cup" };
 const BAR_SECS = new Set(MENU.bar.sections.map(s => s.id));
-const PLAIN = new Set(["breads", "whisky", "gin", "spirits", "cognac", "wine", "beer", "coffee"]);
+function plainIds() { return TABK.flatMap(t => MENU[t].sections.filter(s => s.plain === true).map(s => s.id)); }
+const PLAIN = new Set(REMOTE ? plainIds() : ["breads", "whisky", "gin", "spirits", "cognac", "wine", "beer", "coffee"]);
 const hashOf = s => { let h = 7; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); };
-function glyphOf(e) { const n = norm(e.item.n); for (const [re, g] of GLYPH_RULES[e.tab]) if (re.test(n)) return g; return GLYPH_SEC[e.sec.id] || "plate"; }
+const PAL_K = Object.keys(PALETTE).slice(0, 10), PAL_B = Object.keys(PALETTE).slice(10);
+const palOf = e => PALETTE[e.sec.id] ? e.sec.id : (e.tab === "bar" ? PAL_B : PAL_K)[hashOf(e.sec.id) % PAL_K.length];
+function glyphOf(e) { const n = norm(e.item.n); for (const [re, g] of GLYPH_RULES[e.tab]) if (re.test(n)) return g; return GLYPH_SEC[e.sec.id] || (e.tab === "bar" ? "tumbler" : "plate"); }
 const mono = n => (String(n).replace(/^(the|a)\s+/i, "")[0] || "").toUpperCase();
 function artTile(a, cls = "", extra = "") {
   const ang = 128 + a.seed % 48, rot = (a.seed >> 4) % 13 - 6;
@@ -325,7 +344,7 @@ function artTile(a, cls = "", extra = "") {
 }
 function artHTML(e, cls = "", extra = "") {
   if (e.item.img) return `<span class="art${cls ? " " + cls : ""}" aria-hidden="true"><img src="${esc(e.item.img)}" alt="" loading="lazy" decoding="async">${extra}</span>`;
-  return artTile({ g: glyphOf(e), p: e.sec.id, bar: e.tab === "bar", seed: hashOf(e.id), m: mono(e.item.n) }, cls, extra);
+  return artTile({ g: glyphOf(e), p: palOf(e), bar: e.tab === "bar", seed: hashOf(e.id), m: mono(e.item.n) }, cls, extra);
 }
 
 /* ---------------- items: one template for list rows, cards and rails ---------------- */
@@ -1796,6 +1815,40 @@ setTab(TABS[h0] ? h0 : hm && TABS[hm[1]] ? hm[1] : vFresh && VENUE ? VENUE.tab :
 applyVeg(); updateTray();
 runSplash();
 Source.connect(applyLive, applyItems);
+function applyMenuDoc(doc) {
+  for (const tab of TABK) MENU[tab].sections = doc.menu[tab].sections;
+  initBase();
+  BAR_SECS.clear(); for (const s of MENU.bar.sections) BAR_SECS.add(s.id);
+  PLAIN.clear(); for (const id of plainIds()) PLAIN.add(id);
+  ITEMS = {}; itemsSig = "{}";
+  buildMenu(ITEMS); rebuildIndex(); buildSearch();
+  liveRaw = doc.live; LIVE = normLive(liveRaw); liveSig = JSON.stringify(LIVE); OUT = new Set(LIVE.soldOut);
+  rerender(); updateTray();
+}
+const Remote = {
+  ver: REMOTE ? REMOTE.ver : "", busy: false,
+  async pull() {
+    if (!REMOTE_URL || this.busy || document.hidden) return;
+    this.busy = true;
+    try {
+      const r = await fetch(REMOTE_URL, { cache: "no-store", credentials: "omit" });
+      if (!r.ok) return;
+      const j = await r.json();
+      if (!j || j.published !== true) { if (this.ver) { this.ver = ""; try { localStorage.removeItem(REMOTE_KEY); } catch (err) {} } return; }
+      const ver = j.version + "|" + j.publishedAt;
+      if (ver === this.ver || !docOk(j.doc)) return;
+      applyMenuDoc(j.doc);
+      this.ver = ver;
+      try { localStorage.setItem(REMOTE_KEY, JSON.stringify({ ver, doc: j.doc })); } catch (err) {}
+    } catch (err) {
+    } finally { this.busy = false; }
+  }
+};
+if (REMOTE_URL) {
+  Remote.pull();
+  setInterval(() => Remote.pull(), 15000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) Remote.pull(); });
+}
 if (h0 === "admin") openAdmin();
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measureHero(); onScroll(); });
 let liveCount = OFFERS.filter(offerLive).length;
