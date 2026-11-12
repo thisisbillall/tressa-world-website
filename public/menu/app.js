@@ -1860,7 +1860,9 @@ const Remote = {
       const r = await fetch(REMOTE_URL, { cache: "no-store", credentials: "omit" });
       if (!r.ok) return;
       const j = await r.json();
-      if (!j || j.published !== true) { if (this.ver) { this.ver = ""; try { localStorage.removeItem(REMOTE_KEY); } catch (err) {} } return; }
+      // Nothing published (or it was cleared): forget the saved copy and, if this page is showing it,
+      // reload once onto the built-in menu.
+      if (!j || j.published !== true) { if (this.ver) { this.ver = ""; try { localStorage.removeItem(REMOTE_KEY); } catch (err) {} if (REMOTE) location.reload(); } return; }
       const ver = j.version + "|" + j.publishedAt;
       if (ver === this.ver || !docOk(j.doc)) return;
       applyMenuDoc(j.doc);
